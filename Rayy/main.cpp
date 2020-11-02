@@ -8,7 +8,7 @@ using namespace std;
 typedef unsigned char RGB[3];
 
 parser::Vec3f * vertexData_PTR;
- parser::Scene *scenePTR;
+parser::Scene *scenePTR;
 
 int numberOfSpheres;
 int numberOfTriangles;
@@ -86,11 +86,11 @@ void loadCamera(parser::Camera x){
     halfPixelH = pixelH * 0.5;
     
     
-
+    
     
     camUVector = cross1(cam.gaze, cam.up);
-
-
+    
+    
     camUVector = normalize(camUVector);
     
     cam.up = cross1(camUVector, cam.gaze);
@@ -98,16 +98,12 @@ void loadCamera(parser::Camera x){
     
     cam.gaze = normalize(cam.gaze);
     
-    cout<<endl;
-    cout<< "gaze --> " << cam.gaze.x << "," <<cam.gaze.y << ","<< cam.gaze.z  <<endl;
-    cout<< "V --> " << cam.up.x << "," <<cam.up.y << ","<< cam.up.z  <<endl;
-    cout<< "U --> " << camUVector.x << "," <<camUVector.y << ","<< camUVector.z  <<endl;
-    cout<<endl;
-    
 
+    
+    
     int max = cam.image_width * cam.image_height * 3;
     immage =  new unsigned char [ max];
-
+    
     
 }
 
@@ -122,15 +118,12 @@ void loadScene(parser::Scene * scene){
     numberOfTriangles = scene->triangles.size();
     numberOfMeshes = scene->meshes.size();
     
-//    spheres = (parser::Sphere * )malloc(sizeof(parser::Sphere)* numberOfSpheres);
-//    triangles = (parser::Triangle *)malloc(sizeof(parser::Triangle)* numberOfTriangles);
-//    meshes = (parser::Mesh *)malloc(sizeof(parser::Mesh)* numberOfMeshes);
     
     spheres = new parser::Sphere[numberOfSpheres];
     triangles = new parser::Triangle[numberOfTriangles];
     meshes = new parser::Mesh[numberOfMeshes];
     
-
+    
     
     for(int i =0; i < numberOfSpheres; i++){
         spheres[i].material_id = scene->spheres[i].material_id;
@@ -147,7 +140,7 @@ void loadScene(parser::Scene * scene){
         meshes[i].material_id = scene->meshes[i].material_id;
         meshes[i].faces = scene->meshes[i].faces; // change it si copying deeply
     }
-  
+    
 }
 
 parser::Vec3f mult(parser::Vec3f a, double c){
@@ -175,7 +168,7 @@ parser::Vec3f add(parser::Vec3f a, parser::Vec3f b){
 void initImage(parser::Scene *scene){
     
     // Below sets the background color
-   int  k =0;
+    int  k =0;
     for(int i =0 ; i < cam.image_width; i++){
         for(int j =0; j < cam.image_height; j++){
             
@@ -193,7 +186,7 @@ void initImage(parser::Scene *scene){
 parser::Ray generateRay(int i, int j){
     
     parser::Ray tmp;
-   // parser::Vec3f su, sv, s;
+    // parser::Vec3f su, sv, s;
     tmp.a = cam.position;
     
     parser::Vec3f m;
@@ -204,25 +197,31 @@ parser::Ray generateRay(int i, int j){
     m = add(cam.position, mult(mult(cam.gaze, -1) , -cam.near_distance)); //gaze negatif olabilir kontrol et.
     q = add(m, add(mult(camUVector,cam.near_plane.x ), mult(cam.up,cam.near_plane.w) ));
     
-    su = 0.5* pixelW + i*pixelW;
-    sv = 0.5* pixelH + j*pixelH;
+    su = 0.5* pixelW + j*pixelW;
+    sv = 0.5* pixelH + i*pixelH;
     
-    
+    //
+    //    if(i >= 512 ){
+    //        tmp.b.x = 0;
+    //        tmp.b.y = 0 ;
+    //        tmp.b.z = -1;
+    //        return tmp;
+    //    }
     result = add(q, add(mult(camUVector, su), mult(cam.up, -sv)));
     
     
     
     tmp.b = result;
     return tmp;
- 
     
     
-//    su = mult(camUVector, cam.near_plane.x + (i* pixelW) + halfPixelW);
-//    sv = mult(cam.up, cam.near_plane.z + (j * pixelH) + halfPixelH);
-////
-//    s = add(su, sv);
     
- //   tmp.b = add(mult(cam.gaze, cam.near_distance),s);
+    //    su = mult(camUVector, cam.near_plane.x + (i* pixelW) + halfPixelW);
+    //    sv = mult(cam.up, cam.near_plane.z + (j * pixelH) + halfPixelH);
+    ////
+    //    s = add(su, sv);
+    
+    //   tmp.b = add(mult(cam.gaze, cam.near_distance),s);
     
     
     return  tmp;
@@ -236,23 +235,23 @@ double intersectSphere(parser::Ray ray, parser::Sphere sphere){
     
     parser::Vec3f scenter = vertexData_PTR[sphere.center_vertex_id -1];
     
-//    cout<< "HEY -> " << scenter.x << ","<< scenter.y <<"," <<scenter.z <<endl;
     double sradius = sphere.radius;
-
+    
+    
     
     //parser::Vec3f p;
     double t, t1, t2;
     //int i;
     
     
-    C = (ray.a.x-scenter.x)*(ray.a.x-scenter.x)+(ray.a.y-scenter.y)*(ray.a.y-scenter.y)+(ray.a.z-scenter.z)*(ray.a.z-scenter.z)-sradius*sradius;
+    C = (ray.a.x-scenter.x)*(ray.a.x-scenter.x) + (ray.a.y-scenter.y)*(ray.a.y-scenter.y) + (ray.a.z-scenter.z)*(ray.a.z-scenter.z) -sradius*sradius;
     
-    B = 2*ray.b.x*(ray.a.x-scenter.x)+2*ray.b.y*(ray.a.y-scenter.y)+2*ray.b.z*(ray.a.z-scenter.z);
+    B = 2*ray.b.x*(ray.a.x-scenter.x) + 2*ray.b.y*(ray.a.y-scenter.y) + 2*ray.b.z*(ray.a.z-scenter.z);
     
     A = ray.b.x*ray.b.x + ray.b.y*ray.b.y + ray.b.z*ray.b.z;
-
+    
     delta = B*B-4*A*C;
-
+    
     if(delta < 0 )
         return -1;
     else if(delta == 0 ){
@@ -261,10 +260,11 @@ double intersectSphere(parser::Ray ray, parser::Sphere sphere){
     }else{
         
         double tmp;
+        
         delta = sqrt(delta);
         A = 2*A;
         t1 = (-B + delta) / A;
-        t2 = (-B + delta) / A;
+        t2 = (-B - delta) / A;
         
         if(t2 < t1){
             tmp = t2;
@@ -326,6 +326,12 @@ int clamp(float maximum,float givenColor){
     
 }
 
+void pixelColorSetToZero(int wherePixelStarts){
+    immage[wherePixelStarts] = (unsigned char) 0;
+    immage[wherePixelStarts +1] = (unsigned char) 0;
+    immage[wherePixelStarts +2] = (unsigned char) 0;
+}
+
 
 
 
@@ -337,9 +343,9 @@ int main(int argc, char* argv[])
     
     scene.loadFromXml(argv[1]);
     
-
-    for(auto x = scene.cameras.begin(); x < scene.cameras.end(); x++){
     
+    for(auto x = scene.cameras.begin(); x < scene.cameras.end(); x++){
+        
         loadCamera(*x);
         loadScene(&scene);
         initImage(&scene);
@@ -353,7 +359,7 @@ int main(int argc, char* argv[])
                 int closestObj  = -1;
                 
                 ray = generateRay(i,j);
-
+                
                 for(int k = 0; k < numberOfSpheres; k++){
                     
                     double t;
@@ -372,7 +378,7 @@ int main(int argc, char* argv[])
                 if (closestObj != -1){
                     
                     int wherePixelStarts = i*(cam.image_width)*3 + j*3;
-    
+                    
                     
                     parser::Vec3f ambientReflectance = getAmbientReflectance(spheres[closestObj].material_id);
                     parser::Vec3f ambienLight = scenePTR->ambient_light;
@@ -381,47 +387,35 @@ int main(int argc, char* argv[])
                     immage[wherePixelStarts + 1] = (unsigned char) (ambienLight.y * ambientReflectance.y);// Add ambient component
                     immage[wherePixelStarts + 2] = (unsigned char) (ambienLight.z * ambientReflectance.z);//
                     
-                
-
+                    
+                    
                     for(auto y = scene.point_lights.begin(); y < scene.point_lights.end(); y++){ //Her bir light source icin D ve S hesaplar
                         
-                       
+                        
                         parser::Vec3f lightPosition = (*y).position;
                         parser::Vec3f lightIntensity = (*y).intensity;
                         parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
                         
-//                        cout << "point -> "  <<point.x << "," <<point.y <<"," <<point.z <<endl;
+                        //                        cout << "point -> "  <<point.x << "," <<point.y <<"," <<point.z <<endl;
                         
                         parser::Vec3f sphereCenter = vertexData_PTR[spheres[closestObj].center_vertex_id-1];
                         
                         parser::Vec3f normal = add(point, mult(sphereCenter, -1)); // P - Center = Nomal vector
                         
-                 //       cout << "normal before-> "  <<normal.x << "," <<normal.y <<"," <<normal.z <<endl;
-
+                        //       cout << "normal before-> "  <<normal.x << "," <<normal.y <<"," <<normal.z <<endl;
+                        
                         normal = normalize(normal);
                         
                         parser::Vec3f toLight = add(lightPosition, mult(point, -1)); //  L - P = toLight
-                  //     cout << "tolight before-> "  <<toLight.x << "," <<toLight.y <<"," <<toLight.z <<endl;
-
+                        //     cout << "tolight before-> "  <<toLight.x << "," <<toLight.y <<"," <<toLight.z <<endl;
+                        
                         toLight = normalize(toLight);
                         
                         double cosTeta = dot(normal, toLight);
                         parser::Vec3f diffuseReflectance = getDiffuseReflectance(spheres[closestObj].material_id);
                         double lengthToLight = lengTh(toLight);
                         
-                        //Point -> -0.59132,1.04979,-2.08395
-                        
 
-                        cout << "Center -> "  <<sphereCenter.x << "," <<sphereCenter.y <<"," <<sphereCenter.z <<endl;
-                        cout << "Point -> "  <<point.x << "," <<point.y <<"," <<point.z <<endl;
-                        cout << "Light -> "  <<lightPosition.x << "," <<lightPosition.y <<"," <<lightPosition.z <<endl;
-
-                        cout << "tolight -> "  <<toLight.x << "," <<toLight.y <<"," <<toLight.z <<endl;
-                        cout << "normal -> "  <<normal.x << "," <<normal.y <<"," <<normal.z <<endl;
-                        cout <<"cosTETA-->"<< cosTeta <<endl;
-//
-                        cout<<endl;
-                        
                         if(lengthToLight < 1) {
                             lengthToLight = 1; // r 1 birimden yakinsa formuldeki diffuse sonsuza yaklasacagindan 1 den kucuk oldugunda 1 e sabitlendim.
                         }
@@ -435,9 +429,9 @@ int main(int argc, char* argv[])
                         
                         
                         parser::Vec3f maxColor;
-                        maxColor.x = 2*AttenuatedLightIntensity.x + ambienLight.x; // 2I_{attenuated} + Ambient Light = D + A + S
-                        maxColor.y = 2*AttenuatedLightIntensity.y + ambienLight.y;
-                        maxColor.z = 2*AttenuatedLightIntensity.z + ambienLight.z;
+                        maxColor.x = 2*lightIntensity.x + ambienLight.x; // 2I_{attenuated} + Ambient Light = D + A + S
+                        maxColor.y = 2*lightIntensity.y + ambienLight.y;
+                        maxColor.z = 2*lightIntensity.z + ambienLight.z;
                         
                         float diffuseR =0;
                         float diffuseG =0;
@@ -449,61 +443,51 @@ int main(int argc, char* argv[])
                         
                         if(cosTeta > 0) {
                             
-
+                            
                             
                             diffuseR =  (diffuseReflectance.x * cosTeta * AttenuatedLightIntensity.x / pow(lengthToLight, 2));//
                             diffuseG =  (diffuseReflectance.y * cosTeta * AttenuatedLightIntensity.y / pow(lengthToLight, 2));//
                             diffuseB =  (diffuseReflectance.z * cosTeta * AttenuatedLightIntensity.z / pow(lengthToLight, 2));//
                             
-//                            immage[wherePixelStarts] += (unsigned char) (diffuseReflectance.x * cosTeta * AttenuatedLightIntensity.x / pow(lengthToLight, 2));//
-//                            immage[wherePixelStarts + 1] += (unsigned char) (diffuseReflectance.x * cosTeta * AttenuatedLightIntensity.x / pow(lengthToLight, 2));//
-//                            immage[wherePixelStarts + 2] += (unsigned char) (diffuseReflectance.z * cosTeta * AttenuatedLightIntensity.z / pow(lengthToLight, 2));//
-////
-//                            deneme1 += (diffuseReflectance.x * cosTeta * AttenuatedLightIntensity.x / pow(lengthToLight, 2));
-//                            deneme2 += (diffuseReflectance.y * cosTeta * AttenuatedLightIntensity.y / pow(lengthToLight, 2));
-//                            deneme3  += (diffuseReflectance.z * cosTeta * AttenuatedLightIntensity.z / pow(lengthToLight, 2));
-                            
                             
                         }
-
+                        
                         
                         parser::Vec3f toEye = add(cam.position, mult(point, -1)); // Camera - P = toEye
                         toEye = normalize(toEye);
                         parser::Vec3f halfVector = add(toEye, toLight);
+                        halfVector = normalize(halfVector);
                         double consBeta = dot(normal, halfVector);
                         parser::Vec3f specularReflectance = getspecularReflectance(spheres[closestObj].material_id);
                         float phongExponent = getPhongExponent(spheres[closestObj].material_id);
                         
                         if(consBeta > 0){
                             
-                            spcecularR =  (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
-                            spcecularG =  (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));//
-                            spcecularB =  (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
-//
-//                            immage[wherePixelStarts] += (unsigned char) (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
-//                            immage[wherePixelStarts + 1] += (unsigned char) (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));// Specular component is calculated
-//                            immage[wherePixelStarts + 2] += (unsigned char) (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
-//
-//                            deneme1 += (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));
-//                            deneme2 += (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));
-//                            deneme3 += (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));
-//
+                        spcecularR =  (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
+                        spcecularG =  (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));//
+                        spcecularB =  (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
                             
                         }
                         
-                       // cout<< "teta vs beta --> " << cosTeta << " vs " <<consBeta <<endl;
+                        // cout<< "teta vs beta --> " << cosTeta << " vs " <<consBeta <<endl;
+                        pixelColorSetToZero( wherePixelStarts);
+                        
+
                         immage[wherePixelStarts] += (unsigned char) clamp(maxColor.x, ambienLight.x + diffuseR + spcecularR);
                         immage[wherePixelStarts+1] += (unsigned char) clamp(maxColor.y, ambienLight.y + diffuseG + spcecularG);
                         immage[wherePixelStarts +2] += (unsigned char) clamp(maxColor.z, ambienLight.z + diffuseB + spcecularB);
                         
-                        
+                        if(consBeta > 0.9999 && scenePTR->materials[spheres[closestObj].material_id -1].diffuse.x == 1 && scenePTR->materials[spheres[closestObj].material_id -1].diffuse.y == 0 && scenePTR->materials[spheres[closestObj].material_id -1].diffuse.z == 0){
+                            cout <<endl;
+                            cout<<"R -->" << (int) immage[wherePixelStarts-2] << endl;
+                            cout<< "G -->"  <<  (int) immage[wherePixelStarts-1] << endl;
+                            cout<<"B -->"  <<  (int) immage[wherePixelStarts] << endl;
+                            cout <<endl;
+                        }
 
-
- 
-                        
-
-                        
+    
                     }
+                    
                     
                     
                 }
@@ -512,20 +496,9 @@ int main(int argc, char* argv[])
             }
         }
         
-        
-        
-        
-    
-        
-        
         write_ppm("test.ppm", immage, cam.image_width, cam.image_height);
 
-        
-        
-        
     }
-   
-
     
 }
 
