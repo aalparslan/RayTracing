@@ -1,3 +1,6 @@
 debug.log
 Rayy.xcodeproj
 .vscode
+*raytracer.exe
+*raytracer
+*test.ppm
