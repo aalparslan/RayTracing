@@ -98,11 +98,11 @@ void loadCamera(parser::Camera x){
     
     cam.gaze = normalize(cam.gaze);
     
-    cout<<endl;
-    cout<< "gaze --> " << cam.gaze.x << "," <<cam.gaze.y << ","<< cam.gaze.z  <<endl;
-    cout<< "V --> " << cam.up.x << "," <<cam.up.y << ","<< cam.up.z  <<endl;
-    cout<< "U --> " << camUVector.x << "," <<camUVector.y << ","<< camUVector.z  <<endl;
-    cout<<endl;
+//    cout<<endl;
+//    cout<< "gaze --> " << cam.gaze.x << "," <<cam.gaze.y << ","<< cam.gaze.z  <<endl;
+//    cout<< "V --> " << cam.up.x << "," <<cam.up.y << ","<< cam.up.z  <<endl;
+//    cout<< "U --> " << camUVector.x << "," <<camUVector.y << ","<< camUVector.z  <<endl;
+//    cout<<endl;
     
 
     int max = cam.image_width * cam.image_height * 3;
@@ -204,10 +204,16 @@ parser::Ray generateRay(int i, int j){
     m = add(cam.position, mult(mult(cam.gaze, -1) , -cam.near_distance)); //gaze negatif olabilir kontrol et.
     q = add(m, add(mult(camUVector,cam.near_plane.x ), mult(cam.up,cam.near_plane.w) ));
     
-    su = 0.5* pixelW + i*pixelW;
-    sv = 0.5* pixelH + j*pixelH;
+    su = 0.5* pixelW + j*pixelW;
+    sv = 0.5* pixelH + i*pixelH;
     
-    
+//
+//    if(i >= 512 ){
+//        tmp.b.x = 0;
+//        tmp.b.y = 0 ;
+//        tmp.b.z = -1;
+//        return tmp;
+//    }
     result = add(q, add(mult(camUVector, su), mult(cam.up, -sv)));
     
     
@@ -236,8 +242,8 @@ double intersectSphere(parser::Ray ray, parser::Sphere sphere){
     
     parser::Vec3f scenter = vertexData_PTR[sphere.center_vertex_id -1];
     
-//    cout<< "HEY -> " << scenter.x << ","<< scenter.y <<"," <<scenter.z <<endl;
     double sradius = sphere.radius;
+    
 
     
     //parser::Vec3f p;
@@ -245,9 +251,9 @@ double intersectSphere(parser::Ray ray, parser::Sphere sphere){
     //int i;
     
     
-    C = (ray.a.x-scenter.x)*(ray.a.x-scenter.x)+(ray.a.y-scenter.y)*(ray.a.y-scenter.y)+(ray.a.z-scenter.z)*(ray.a.z-scenter.z)-sradius*sradius;
+    C = (ray.a.x-scenter.x)*(ray.a.x-scenter.x) + (ray.a.y-scenter.y)*(ray.a.y-scenter.y) + (ray.a.z-scenter.z)*(ray.a.z-scenter.z) -sradius*sradius;
     
-    B = 2*ray.b.x*(ray.a.x-scenter.x)+2*ray.b.y*(ray.a.y-scenter.y)+2*ray.b.z*(ray.a.z-scenter.z);
+    B = 2*ray.b.x*(ray.a.x-scenter.x) + 2*ray.b.y*(ray.a.y-scenter.y) + 2*ray.b.z*(ray.a.z-scenter.z);
     
     A = ray.b.x*ray.b.x + ray.b.y*ray.b.y + ray.b.z*ray.b.z;
 
@@ -261,10 +267,11 @@ double intersectSphere(parser::Ray ray, parser::Sphere sphere){
     }else{
         
         double tmp;
+        
         delta = sqrt(delta);
         A = 2*A;
         t1 = (-B + delta) / A;
-        t2 = (-B + delta) / A;
+        t2 = (-B - delta) / A;
         
         if(t2 < t1){
             tmp = t2;
@@ -411,17 +418,17 @@ int main(int argc, char* argv[])
                         
                         //Point -> -0.59132,1.04979,-2.08395
                         
-
-                        cout << "Center -> "  <<sphereCenter.x << "," <<sphereCenter.y <<"," <<sphereCenter.z <<endl;
-                        cout << "Point -> "  <<point.x << "," <<point.y <<"," <<point.z <<endl;
-                        cout << "Light -> "  <<lightPosition.x << "," <<lightPosition.y <<"," <<lightPosition.z <<endl;
-
-                        cout << "tolight -> "  <<toLight.x << "," <<toLight.y <<"," <<toLight.z <<endl;
-                        cout << "normal -> "  <<normal.x << "," <<normal.y <<"," <<normal.z <<endl;
-                        cout <<"cosTETA-->"<< cosTeta <<endl;
 //
-                        cout<<endl;
-                        
+//                        cout << "Center -> "  <<sphereCenter.x << "," <<sphereCenter.y <<"," <<sphereCenter.z <<endl;
+//                        cout << "Point -> "  <<point.x << "," <<point.y <<"," <<point.z <<endl;
+//                        cout << "Light -> "  <<lightPosition.x << "," <<lightPosition.y <<"," <<lightPosition.z <<endl;
+//
+//                        cout << "tolight -> "  <<toLight.x << "," <<toLight.y <<"," <<toLight.z <<endl;
+//                        cout << "normal -> "  <<normal.x << "," <<normal.y <<"," <<normal.z <<endl;
+//                        cout <<"cosTETA-->"<< cosTeta <<endl;
+////
+//                        cout<<endl;
+//
                         if(lengthToLight < 1) {
                             lengthToLight = 1; // r 1 birimden yakinsa formuldeki diffuse sonsuza yaklasacagindan 1 den kucuk oldugunda 1 e sabitlendim.
                         }
@@ -476,9 +483,9 @@ int main(int argc, char* argv[])
                         
                         if(consBeta > 0){
                             
-                            spcecularR =  (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
-                            spcecularG =  (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));//
-                            spcecularB =  (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
+//                            spcecularR =  (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
+//                            spcecularG =  (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));//
+//                            spcecularB =  (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
 //
 //                            immage[wherePixelStarts] += (unsigned char) (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
 //                            immage[wherePixelStarts + 1] += (unsigned char) (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));// Specular component is calculated
