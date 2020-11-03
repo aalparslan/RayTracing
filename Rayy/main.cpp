@@ -1,7 +1,7 @@
-#include <iostream>
-#include "parser.hpp"
-#include "ppm.hpp"
-#include <math.h>
+// Dosya uzun oldugu icin kafam karisti, bu dosyalara boldum simdilik
+#include "helper.hpp"
+#include "intersection.cpp"
+#include "color.cpp"
 
 
 using namespace std;
@@ -61,10 +61,6 @@ parser::Vec3f cross1(parser::Vec3f a, parser::Vec3f b){
 double lengTh(parser::Vec3f v){
     
     return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
-}
-
-double dot(parser::Vec3f a, parser::Vec3f b){
-    return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
 parser::Vec3f normalize(parser::Vec3f v){
@@ -600,6 +596,7 @@ int main(int argc, char* argv[])
                         if(t2 < tmin){
 
                             tmin =t2;
+
                             closestObj = k;
                             closestShape = Shape::Triangle;
 
