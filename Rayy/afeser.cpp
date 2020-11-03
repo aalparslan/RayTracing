@@ -1,7 +1,10 @@
 #include "helper.hpp"
 
-double intersectTriangle(parser::Ray ray, parser::Triangle triangle){
+std::pair<double, parser::Vec3f>  intersectTriangle(const parser::Ray &ray, const parser::Triangle& triangle, std::vector<parser::Vec3f> &vertexData){
     /*
+     Return t as double and normal vector as Vec3f.
+     t = -1 if no intersection exists.
+
      (Snyder & Barr, 1987) method
      Textbook Page 78 notation used
      */
@@ -17,17 +20,18 @@ double intersectTriangle(parser::Ray ray, parser::Triangle triangle){
     double z_d = ray.b.z;
 
     // Triangle constants...
-    double x_a = vertexData_PTR[triangle.indices.v0_id].x;
-    double y_a = vertexData_PTR[triangle.indices.v0_id].y;
-    double z_a = vertexData_PTR[triangle.indices.v0_id].z;
+    // Notice the indices start from 1, so decrement is needed
+    double x_a = vertexData[triangle.indices.v0_id-1].x;
+    double y_a = vertexData[triangle.indices.v0_id-1].y;
+    double z_a = vertexData[triangle.indices.v0_id-1].z;
 
-    double x_b = vertexData_PTR[triangle.indices.v1_id].x;
-    double y_b = vertexData_PTR[triangle.indices.v1_id].y;
-    double z_b = vertexData_PTR[triangle.indices.v1_id].z;
+    double x_b = vertexData[triangle.indices.v1_id-1].x;
+    double y_b = vertexData[triangle.indices.v1_id-1].y;
+    double z_b = vertexData[triangle.indices.v1_id-1].z;
 
-    double x_c = vertexData_PTR[triangle.indices.v2_id].x;
-    double y_c = vertexData_PTR[triangle.indices.v2_id].y;
-    double z_c = vertexData_PTR[triangle.indices.v2_id].z;
+    double x_c = vertexData[triangle.indices.v2_id-1].x;
+    double y_c = vertexData[triangle.indices.v2_id-1].y;
+    double z_c = vertexData[triangle.indices.v2_id-1].z;
 
 
     // Matrix elements...  
@@ -63,16 +67,30 @@ double intersectTriangle(parser::Ray ray, parser::Triangle triangle){
     gamma = gamma / M;
     t     = t     / M * (-1);
 
+    // Calculate the edge vectors
+    // Direction is from second vertex to first and third
+    parser::Vec3f edge1, edge2, normal;
+
+    edge1.x = x_a - x_b;
+    edge1.y = y_a - y_b;
+    edge1.z = z_a - z_b;
+
+    edge2.x = x_c - x_b;
+    edge2.y = y_c - y_b;
+    edge2.z = z_c - z_b;
+    
+    // TODO - edge order
+    normal = vectorNormalize(vectorCrossProduct(edge2, edge1));
+
     // TODO -> t_0 icin e noktasini, yani camera position aliyorum, bu yanlis olabilir mi?? cunku canvas ile kamera arasindaysa gormemeli sanirim? ya da gormeli mi :)
     if (
-        t > 0     || t < 100   ||
-        gamma < 0 || gamma > 1 ||
-        beta < 0  || beta > 1
+        t < 0     ||
+        gamma < 0 || gamma + beta > 1 ||
+        beta < 0
     ){
-        // TODO -> t < 100 hesaplamasi yapilcak
-        return -1;
+        return std::pair<double, parser::Vec3f>(-1, normal);
     }else{
-        return t;
+        return std::pair<double, parser::Vec3f>(t, normal);
     }
 
 

@@ -10,13 +10,6 @@ Helper functions for algebra etc.
 #include <math.h>
 
 
-typedef unsigned char MonoPixel; // Pixel data type
-struct Color{ // Alparslan - RGB array oldugu icin return type icinde sikinti cikardi, bunu olusturdum bu yuzden
-    MonoPixel R;
-    MonoPixel G;
-    MonoPixel B;
-};
-
 
 parser::Vec3f vectorDifference(parser::Vec3f a, parser::Vec3f b); // Calculate a - b
 double vectorLength(parser::Vec3f v); // Calculate vector length
@@ -24,5 +17,7 @@ double dot(parser::Vec3f a, parser::Vec3f b); // Calculate dot product
 parser::Vec3f vectorDivision(parser::Vec3f v, double div); // Divide vector by a scalar
 parser::Vec3f vectorMultiplication(parser::Vec3f v, double mul); // Multiply vector by a scalar
 parser::Vec3f vectorAddition(parser::Vec3f v, parser::Vec3f u); // Vectoral summation
+parser::Vec3f vectorCrossProduct(parser::Vec3f v, parser::Vec3f u); // Get a perpendicular vector
+parser::Vec3f vectorNormalize(parser::Vec3f v); // Divide vector by its length
 
-#endif HW1_HELPER
+#endif
