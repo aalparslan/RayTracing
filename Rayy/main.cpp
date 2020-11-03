@@ -7,6 +7,21 @@
 using namespace std;
 typedef unsigned char RGB[3];
 
+enum class Shape { Sphere,
+    Triangle,
+    Mesh };
+
+
+typedef struct IntersectionData
+{
+    
+    float t;
+    parser::Vec3f normal;
+    int materialId;
+    
+} IntersectionData;
+
+
 parser::Vec3f *vertexData_PTR;
 parser::Scene *scenePTR;
 
@@ -75,10 +90,10 @@ void loadCamera(parser::Camera x){
     
     pixelW = (cam.near_plane.y - cam.near_plane.x)/ (double) cam.image_width;
     halfPixelW = pixelW * 0.5;
-
+    
     pixelH = (cam.near_plane.w - cam.near_plane.z) / (double) cam.image_height;
     halfPixelH = pixelH * 0.5;
-
+    
     camUVector = cross1(cam.gaze, cam.up);
     
     
@@ -187,7 +202,7 @@ parser::Ray generateRay(int i, int j){
     
     su = 0.5* pixelW + j*pixelW;
     sv = 0.5* pixelH + i*pixelH;
-
+    
     result = add(q, add(mult(camUVector, su), mult(cam.up, -sv)));
     
     
@@ -196,8 +211,136 @@ parser::Ray generateRay(int i, int j){
     
 }
 
+double intersectSphere(parser::Ray ray, parser::Sphere sphere){ // TODO - neden double bu?? struct yapilari float??
+    
+    double A, B, C;  // ---> qudritic func constants
+    
+    double delta;
+    
+    parser::Vec3f scenter = vertexData_PTR[sphere.center_vertex_id -1];
+    
+    double sradius = sphere.radius;
+    
+    
+    double t, t1, t2;
+    
+    C = (ray.a.x-scenter.x)*(ray.a.x-scenter.x) + (ray.a.y-scenter.y)*(ray.a.y-scenter.y) + (ray.a.z-scenter.z)*(ray.a.z-scenter.z) -sradius*sradius;
+    
+    B = 2*ray.b.x*(ray.a.x-scenter.x) + 2*ray.b.y*(ray.a.y-scenter.y) + 2*ray.b.z*(ray.a.z-scenter.z);
+    
+    A = ray.b.x*ray.b.x + ray.b.y*ray.b.y + ray.b.z*ray.b.z;
+    
+    delta = B*B-4*A*C;
+    
+    if(delta < 0 )
+        return -1; // TODO - float comparison bazen yanlis sonuc verebilir sanki??
+    else if(delta == 0 ){
+        
+        t = -B / (2*A);
+    }else{
+        
+        double tmp;
+        
+        delta = sqrt(delta);
+        A = 2*A;
+        t1 = (-B + delta) / A;
+        t2 = (-B - delta) / A;
+        
+        if(t2 < t1){
+            tmp = t2;
+            t2 = t1;
+            t1 = tmp;
+        }
+        
+        if(t1 >= 1.0 )
+            t = t1;
+        else{
+            t = -1;
+        }
+    }
+    
+    return t;
+    
+}
+double intersectTriangle(parser::Ray ray, parser::Triangle triangle){
+    /*
+     (Snyder & Barr, 1987) method
+     Textbook Page 78 notation used
+     */
+    // TODO - ray.a balangic noktasi diye varsayiyorum, kontrol etcem
+    // TODO - untested!
+    // Ray constants...
+    double x_e = ray.a.x;
+    double y_e = ray.a.y;
+    double z_e = ray.a.z;
+    
+    double x_d = ray.b.x;
+    double y_d = ray.b.y;
+    double z_d = ray.b.z;
+    
+    // Triangle constants...
+    double x_a = vertexData_PTR[triangle.indices.v0_id].x;
+    double y_a = vertexData_PTR[triangle.indices.v0_id].y;
+    double z_a = vertexData_PTR[triangle.indices.v0_id].z;
+    
+    double x_b = vertexData_PTR[triangle.indices.v1_id].x;
+    double y_b = vertexData_PTR[triangle.indices.v1_id].y;
+    double z_b = vertexData_PTR[triangle.indices.v1_id].z;
+    
+    double x_c = vertexData_PTR[triangle.indices.v2_id].x;
+    double y_c = vertexData_PTR[triangle.indices.v2_id].y;
+    double z_c = vertexData_PTR[triangle.indices.v2_id].z;
+    
+    
+    // Matrix elements...
+    double a = x_a - x_b;
+    double b = y_a - y_b;
+    double c = z_a - z_b;
+    
+    double d = x_a - x_c;
+    double e = y_a - y_c;
+    double f = z_a - z_c;
+    
+    double g = x_d;
+    double h = y_d;
+    double i = z_d;
+    
+    // Solution variables...
+    double j = x_a - x_e;
+    double k = y_a - y_e;
+    double l = z_a - z_e;
+    
+    
+    // Composite variables...
+    double M = a*(e*i - h*f) + b*(g*f - d*i) + c*(d*h - e*g);
+    
+    
+    // Main variables
+    double beta  = j*(e*i - h*f) + k*(g*f - d*i) + l*(d*h - e*g);
+    double gamma = i*(a*k - j*b) + h*(j*c - a*l) + g*(b*l - k*c);
+    double t     = f*(a*k - j*b) + e*(j*c - a*l) + d*(b*l - k*c);
+    
+    // Normalization...
+    beta  = beta  / M;
+    gamma = gamma / M;
+    t     = t     / M * (-1);
+    
+    // TODO -> t_0 icin e noktasini, yani camera position aliyorum, bu yanlis olabilir mi?? cunku canvas ile kamera arasindaysa gormemeli sanirim? ya da gormeli mi :)
+    if (
+        t > 0     || t < 100   ||
+        gamma < 0 || gamma > 1 ||
+        beta < 0  || beta > 1
+        ){
+        // TODO -> t < 100 hesaplamasi yapilcak
+        return -1;
+    }else{
+        return t;
+    }
+    
+    
+}
 parser::Vec3f getAmbientReflectance(int materialID){
-
+    
     return  scenePTR->materials[materialID-1].ambient;
     
 }
@@ -236,37 +379,58 @@ void pixelColorSetToZero(int wherePixelStarts){
 
 
 
-void colorSpheres(int i , int j, int closestObj, double tmin, parser::Ray ray, parser::Scene *scene){
-    int wherePixelStarts = i*(cam.image_width)*3 + j*3;
+parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int recursionNumber,parser::Scene *scene){
     
     
-    parser::Vec3f ambientReflectance = getAmbientReflectance(spheres[closestObj].material_id);
+    int materialID = intersection.materialId;
+    double tmin = intersection.t;
+    parser::Vec3f normal = intersection.normal;
+    
+    
+    
+    parser::Vec3f pixelColor = {};
+    
+    
+    
+    parser::Vec3f ambientReflectance = getAmbientReflectance(materialID);
     parser::Vec3f ambienLight = scenePTR->ambient_light;
     
-    immage[wherePixelStarts] = (unsigned char) (ambienLight.x * ambientReflectance.x);//
-    immage[wherePixelStarts + 1] = (unsigned char) (ambienLight.y * ambientReflectance.y);// Add ambient component
-    immage[wherePixelStarts + 2] = (unsigned char) (ambienLight.z * ambientReflectance.z);//
+
+    //    immage[wherePixelStarts] = (unsigned char) (ambienLight.x * ambientReflectance.x);//
+    //    immage[wherePixelStarts + 1] = (unsigned char) (ambienLight.y * ambientReflectance.y);// Add ambient component
+    //    immage[wherePixelStarts + 2] = (unsigned char) (ambienLight.z * ambientReflectance.z);//
     
+    pixelColor.x = (ambienLight.x * ambientReflectance.x);
+    pixelColor.y = (ambienLight.y * ambientReflectance.y);
+    pixelColor.z = (ambienLight.z * ambientReflectance.z);
     
     
     for(auto y = scene->point_lights.begin(); y < scene->point_lights.end(); y++){ //Her bir light source icin D ve S hesaplar
         
         
+        
+        //// Diffuse calculation begins...
         parser::Vec3f lightPosition = (*y).position;
         parser::Vec3f lightIntensity = (*y).intensity;
         parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
         
-        parser::Vec3f sphereCenter = vertexData_PTR[spheres[closestObj].center_vertex_id-1];
-        
-        parser::Vec3f normal = add(point, mult(sphereCenter, -1)); // P - Center = Nomal vector
+//        parser::Vec3f sphereCenter = vertexData_PTR[spheres[closestObj].center_vertex_id-1];
+//
+//        parser::Vec3f normal = add(point, mult(sphereCenter, -1)); // P - Center = Nomal vector
         
         normal = normalize(normal);
+        
+        //        bool pointInShadow = isPointInShadow(point, (*y));
+        //
+        //        if(pointInShadow){
+        //            continue;
+        //        }
         
         parser::Vec3f toLight = add(lightPosition, mult(point, -1)); //  L - P = toLight
         toLight = normalize(toLight);
         
         double cosTeta = dot(normal, toLight);
-        parser::Vec3f diffuseReflectance = getDiffuseReflectance(spheres[closestObj].material_id);
+        parser::Vec3f diffuseReflectance = getDiffuseReflectance(materialID);
         double lengthToLight = lengTh(toLight);
         
         parser::Vec3f AttenuatedLightIntensity;
@@ -291,7 +455,7 @@ void colorSpheres(int i , int j, int closestObj, double tmin, parser::Ray ray, p
         if(cosTeta > 0) {
             
             
-            
+            //// Diffuse set variables...
             diffuseR =  (diffuseReflectance.x * cosTeta * AttenuatedLightIntensity.x / pow(lengthToLight, 2));//
             diffuseG =  (diffuseReflectance.y * cosTeta * AttenuatedLightIntensity.y / pow(lengthToLight, 2));//
             diffuseB =  (diffuseReflectance.z * cosTeta * AttenuatedLightIntensity.z / pow(lengthToLight, 2));//
@@ -300,31 +464,85 @@ void colorSpheres(int i , int j, int closestObj, double tmin, parser::Ray ray, p
         }
         
         
+        //// Specular specific variables...
         parser::Vec3f toEye = add(cam.position, mult(point, -1)); // Camera - P = toEye
         toEye = normalize(toEye);
         parser::Vec3f halfVector = add(toEye, toLight);
         halfVector = normalize(halfVector);
         double consBeta = dot(normal, halfVector);
-        parser::Vec3f specularReflectance = getspecularReflectance(spheres[closestObj].material_id);
-        float phongExponent = getPhongExponent(spheres[closestObj].material_id);
+        parser::Vec3f specularReflectance = getspecularReflectance(materialID);
+        float phongExponent = getPhongExponent(materialID);
         
         if(consBeta > 0){
-            
+            //// Set specular variables
             spcecularR =  (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
             spcecularG =  (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));//
             spcecularB =  (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
             
         }
         
-        pixelColorSetToZero( wherePixelStarts);
-        
-        
-        immage[wherePixelStarts] += (unsigned char) clamp(maxColor.x, ambienLight.x + diffuseR + spcecularR);
-        immage[wherePixelStarts+1] += (unsigned char) clamp(maxColor.y, ambienLight.y + diffuseG + spcecularG);
-        immage[wherePixelStarts +2] += (unsigned char) clamp(maxColor.z, ambienLight.z + diffuseB + spcecularB);
+        if(diffuseR  > scenePTR->shadow_ray_epsilon || diffuseB >scenePTR->shadow_ray_epsilon || diffuseG  >scenePTR->shadow_ray_epsilon ){
+            
+            //pixelColorSetToZero( wherePixelStarts);
+            
+            //            immage[wherePixelStarts] += (unsigned char) clamp(maxColor.x,(ambienLight.x * ambientReflectance.x) +  diffuseR + spcecularR);
+            //            immage[wherePixelStarts+1] += (unsigned char) clamp(maxColor.y,(ambienLight.y * ambientReflectance.y) + diffuseG + spcecularG);
+            //            immage[wherePixelStarts +2] += (unsigned char) clamp(maxColor.z,(ambienLight.z * ambientReflectance.z) + diffuseB + spcecularB);
+            
+            pixelColor.x = clamp(maxColor.x,(ambienLight.x * ambientReflectance.x) +  diffuseR + spcecularR);
+            pixelColor.y = clamp(maxColor.y,(ambienLight.y * ambientReflectance.y) + diffuseG + spcecularG);
+            pixelColor.z = clamp(maxColor.z,(ambienLight.z * ambientReflectance.z) + diffuseB + spcecularB);
+            
+        }
         
     }
+    
+    
+    //parser::Vec3f mirrorComponenet = scene->materials[spheres[closestObj].material_id -1].mirror;
+    
+    
+    
+    //        if(scenePTR->max_recursion_depth > 0 && NotZero(mirrorComponenet)){
+    //
+    //            scenePTR->max_recursion_depth = scenePTR->max_recursion_depth -1;
+    //
+    //            parser::Vec3f direction;
+    //            direction.x = cam.position.x -point.x;
+    //            direction.y = cam.position.x -point.y;
+    //            direction.z = cam.position.x -point.z;
+    //
+    //            direction = normalize(direction);
+    //            normal = normalize(normal);
+    //
+    //            double CosAngle = dot(direction, normal);
+    //
+    //            parser::Vec3f wr = add(mult(direction, -1), mult( mult(normal, 2), CosAngle ));
+    //
+    //            wr = normalize(wr);
+    //
+    //            parser::Ray newRay;
+    //
+    //            newRay.a.x = point.x;
+    //            newRay.a.y = point.y;
+    //            newRay.a.z = point.z;
+    //
+    //            newRay.b.x = point.x + wr.x;
+    //            newRay.b.y = point.y + wr.y;
+    //            newRay.b.z = point.z + wr.z;
+    //
+    //
+    //            sendRay(newRay,  i,  j ,  closestObj,  tmin,  scene);
+    //
+    //
+    //        }
+    
+    return pixelColor;
 }
+
+void colorTriangle(int i , int j, int closestObj, double tmin, parser::Ray ray, parser::Scene *scene){
+    // TODO
+}
+
 
 
 
@@ -348,41 +566,47 @@ int main(int argc, char* argv[])
                 double tmin = 40000; // Burayi kontrol et gerek var mi yada yeterli mi ?
                 int closestObj  = -1;
                 
+                Shape closestShape;
+                
                 ray = generateRay(i,j);
                 
                 for(int k = 0; k < numberOfSpheres; k++){
                     
-                    double t;
-                    t = intersectSphere(ray, spheres[k]);
+                    double t1;
+                    t1 = intersectSphere(ray, spheres[k]);
                     
-                    if(t >= 1){
+                    if(t1 >= 1){
                         
-                        if(t < tmin){
+                        if(t1 < tmin){
                             
-                            tmin =t;
+                            tmin =t1;
                             closestObj = k;
+                            closestShape = Shape::Sphere;
                         }
                     }
                 }
-                for(int k = 0; k < numberOfTriangles, k++){
+                for(int k = 0; k < numberOfTriangles; k++){
 
-                    double t;
+                    double t2;
 
-                    intersectTriangle(ray, triangles[k]);
-                    
-                    if(t >= 1){
-                        
-                        if(t < tmin){
-                            
-                            tmin =t;
+                     t2 = intersectTriangle(ray, triangles[k]);
+
+                    if(t2 >= 1){
+
+                        if(t2 < tmin){
+
+                            tmin =t2;
+
                             closestObj = k;
+                            closestShape = Shape::Triangle;
+
                         }
                     }
                 }
-
-
+                
+                
                 // TO DO: intersectMesh(ray, meshes[m])
-
+                
                 if (closestObj != -1){ // TODO - float comparison!
                     
                     // TO DO: DO comparison between t values of intersectSphere,intersectTriangle and intersectMesh
@@ -393,7 +617,38 @@ int main(int argc, char* argv[])
                     // TO DO: colorTriangles
                     // TO DO: colorMeshes
                     
-                    colorSpheres(i ,j, closestObj, tmin, ray, &scene);
+                    IntersectionData intersection;
+                    parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
+                    
+                    if(closestShape == Shape::Sphere){
+                        
+                        
+                        parser::Vec3f sphereCenter = vertexData_PTR[spheres[closestObj].center_vertex_id-1];
+                        parser::Vec3f normal = add(point, mult(sphereCenter, -1));
+                        
+                        intersection.materialId = scenePTR->spheres[closestObj].material_id;
+                        intersection.t = tmin;
+                        intersection.normal = normal;
+
+                        
+                        
+                    }else if(closestShape == Shape::Triangle){
+                        // TO DO : Set intersection variable for triangle
+                        
+                    }else if(closestShape == Shape::Mesh){
+                        // TO DO : SET intersection variable for mesh
+                    }
+                    
+                    
+                    parser::Vec3f color = computeColor(ray, intersection, scenePTR->max_recursion_depth, &scene); // just one function for coloring
+                    
+                    
+                    int wherePixelStarts = i*(cam.image_width)*3 + j*3;
+                    
+                    
+                    immage[wherePixelStarts] = (unsigned char) color.x;
+                    immage[wherePixelStarts + 1] = (unsigned char) color.y;
+                    immage[wherePixelStarts + 2] = (unsigned char) color.z;
                 }
             }
         }
@@ -403,4 +658,3 @@ int main(int argc, char* argv[])
     }
     
 }
-
