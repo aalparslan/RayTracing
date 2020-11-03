@@ -24,7 +24,7 @@ typedef struct IntersectionData
     
 } IntersectionData;
 
-
+// Global variable'lar neden var cozemedim???
 parser::Vec3f *vertexData_PTR;
 parser::Scene *scenePTR;
 
@@ -516,27 +516,29 @@ int main(int argc, char* argv[])
                         }
                     }
                 }
-                for(int k = 0; k < numberOfTriangles; k++){
+                // Intersect triangle
+                for(int k = 0; k < scene.triangles.size(); k++){
 
-                    // std::pair<double, parser::Vec3f> tAndNormal;
+                    std::pair<double, parser::Vec3f> tAndNormal;
                     
-                    // tAndNormal = intersectTriangle(ray, triangles[k], vertexData_PTR);
+                    tAndNormal = intersectTriangle(ray, scene.triangles[k], scene.vertex_data);
 
-                    // t1 = tAndNormal.first;
-                    // parser::Vec3f normalVector = tAndNormal.second;
+                    t1 = tAndNormal.first;
+                    parser::Vec3f normalVector = tAndNormal.second;
 
-                    // if(t1 >= 1){
+                    if(t1 >= 1){
 
-                    //     if(t1 < tmin){
-                    //         intersection.t          = t1;
-                    //         intersection.normal     = normalVector;
-                    //         intersection.materialId = scenePTR->triangles[k].material_id;
+                        if(t1 < tmin){
+                            intersection.t          = t1;
+                            intersection.normal     = normalVector;
+                            intersection.materialId = scene.triangles[k].material_id;
 
-                    //         tmin = t1;
+                            tmin = t1;
 
-                    //     }
-                    // }
+                        }
+                    }
                 }
+                
                 
                 
                 // TO DO: intersectMesh(ray, meshes[m])
