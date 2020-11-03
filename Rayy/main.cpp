@@ -501,6 +501,9 @@ int main(int argc, char* argv[])
                     }
                 }
                 for(int k = 0; k < numberOfTriangles, k++){
+
+                    double t;
+                    
                     intersectTriangle(ray, triangles[k]);
                     
                     if(t >= 1){
