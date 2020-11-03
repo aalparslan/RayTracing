@@ -413,7 +413,7 @@ parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int 
         
         
         
-        
+        //// Diffuse calculation begins...
         parser::Vec3f lightPosition = (*y).position;
         parser::Vec3f lightIntensity = (*y).intensity;
         parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
@@ -459,7 +459,7 @@ parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int 
         if(cosTeta > 0) {
             
             
-            
+            //// Diffuse set variables...
             diffuseR =  (diffuseReflectance.x * cosTeta * AttenuatedLightIntensity.x / pow(lengthToLight, 2));//
             diffuseG =  (diffuseReflectance.y * cosTeta * AttenuatedLightIntensity.y / pow(lengthToLight, 2));//
             diffuseB =  (diffuseReflectance.z * cosTeta * AttenuatedLightIntensity.z / pow(lengthToLight, 2));//
@@ -468,6 +468,7 @@ parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int 
         }
         
         
+        //// Specular specific variables...
         parser::Vec3f toEye = add(cam.position, mult(point, -1)); // Camera - P = toEye
         toEye = normalize(toEye);
         parser::Vec3f halfVector = add(toEye, toLight);
@@ -477,7 +478,7 @@ parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int 
         float phongExponent = getPhongExponent(materialID);
         
         if(consBeta > 0){
-            
+            //// Set specular variables
             spcecularR =  (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
             spcecularG =  (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));//
             spcecularB =  (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
