@@ -368,20 +368,31 @@ void pixelColorSetToZero(int wherePixelStarts){
 
 
 
-void colorSpheres(int i , int j, int closestObj, double tmin, parser::Ray ray, parser::Scene *scene){
-    int wherePixelStarts = i*(cam.image_width)*3 + j*3;
+parser::Vec3f computeColor(int closestObj, double tmin, parser::Ray ray, parser::Scene *scene){
+    
+    
+    parser::Vec3f pixelColor = {};
+    
     
     
     parser::Vec3f ambientReflectance = getAmbientReflectance(spheres[closestObj].material_id);
     parser::Vec3f ambienLight = scenePTR->ambient_light;
     
-    immage[wherePixelStarts] = (unsigned char) (ambienLight.x * ambientReflectance.x);//
-    immage[wherePixelStarts + 1] = (unsigned char) (ambienLight.y * ambientReflectance.y);// Add ambient component
-    immage[wherePixelStarts + 2] = (unsigned char) (ambienLight.z * ambientReflectance.z);//
     
-    
+//
+//
+//    immage[wherePixelStarts] = (unsigned char) (ambienLight.x * ambientReflectance.x);//
+//    immage[wherePixelStarts + 1] = (unsigned char) (ambienLight.y * ambientReflectance.y);// Add ambient component
+//    immage[wherePixelStarts + 2] = (unsigned char) (ambienLight.z * ambientReflectance.z);//
+
+    pixelColor.x = (ambienLight.x * ambientReflectance.x);
+    pixelColor.y = (ambienLight.y * ambientReflectance.y);
+    pixelColor.z = (ambienLight.z * ambientReflectance.z);
+
     
     for(auto y = scene->point_lights.begin(); y < scene->point_lights.end(); y++){ //Her bir light source icin D ve S hesaplar
+        
+        
         
         
         parser::Vec3f lightPosition = (*y).position;
@@ -393,6 +404,12 @@ void colorSpheres(int i , int j, int closestObj, double tmin, parser::Ray ray, p
         parser::Vec3f normal = add(point, mult(sphereCenter, -1)); // P - Center = Nomal vector
         
         normal = normalize(normal);
+        
+//        bool pointInShadow = isPointInShadow(point, (*y));
+//
+//        if(pointInShadow){
+//            continue;
+//        }
         
         parser::Vec3f toLight = add(lightPosition, mult(point, -1)); //  L - P = toLight
         toLight = normalize(toLight);
@@ -448,15 +465,64 @@ void colorSpheres(int i , int j, int closestObj, double tmin, parser::Ray ray, p
             
         }
         
-        pixelColorSetToZero( wherePixelStarts);
-        
-        
-        immage[wherePixelStarts] += (unsigned char) clamp(maxColor.x, ambienLight.x + diffuseR + spcecularR);
-        immage[wherePixelStarts+1] += (unsigned char) clamp(maxColor.y, ambienLight.y + diffuseG + spcecularG);
-        immage[wherePixelStarts +2] += (unsigned char) clamp(maxColor.z, ambienLight.z + diffuseB + spcecularB);
-        
+        if(diffuseR  > scenePTR->shadow_ray_epsilon || diffuseB >scenePTR->shadow_ray_epsilon || diffuseG  >scenePTR->shadow_ray_epsilon ){
+            
+          //pixelColorSetToZero( wherePixelStarts);
+            
+//            immage[wherePixelStarts] += (unsigned char) clamp(maxColor.x,(ambienLight.x * ambientReflectance.x) +  diffuseR + spcecularR);
+//            immage[wherePixelStarts+1] += (unsigned char) clamp(maxColor.y,(ambienLight.y * ambientReflectance.y) + diffuseG + spcecularG);
+//            immage[wherePixelStarts +2] += (unsigned char) clamp(maxColor.z,(ambienLight.z * ambientReflectance.z) + diffuseB + spcecularB);
+            
+            pixelColor.x = clamp(maxColor.x,(ambienLight.x * ambientReflectance.x) +  diffuseR + spcecularR);
+            pixelColor.y = clamp(maxColor.y,(ambienLight.y * ambientReflectance.y) + diffuseG + spcecularG);
+            pixelColor.z = clamp(maxColor.z,(ambienLight.z * ambientReflectance.z) + diffuseB + spcecularB);
+            
+        }
+    
     }
+    
+    
+    //parser::Vec3f mirrorComponenet = scene->materials[spheres[closestObj].material_id -1].mirror;
+    
+    
+    
+    //        if(scenePTR->max_recursion_depth > 0 && NotZero(mirrorComponenet)){
+    //
+    //            scenePTR->max_recursion_depth = scenePTR->max_recursion_depth -1;
+    //
+    //            parser::Vec3f direction;
+    //            direction.x = cam.position.x -point.x;
+    //            direction.y = cam.position.x -point.y;
+    //            direction.z = cam.position.x -point.z;
+    //
+    //            direction = normalize(direction);
+    //            normal = normalize(normal);
+    //
+    //            double CosAngle = dot(direction, normal);
+    //
+    //            parser::Vec3f wr = add(mult(direction, -1), mult( mult(normal, 2), CosAngle ));
+    //
+    //            wr = normalize(wr);
+    //
+    //            parser::Ray newRay;
+    //
+    //            newRay.a.x = point.x;
+    //            newRay.a.y = point.y;
+    //            newRay.a.z = point.z;
+    //
+    //            newRay.b.x = point.x + wr.x;
+    //            newRay.b.y = point.y + wr.y;
+    //            newRay.b.z = point.z + wr.z;
+    //
+    //
+    //            sendRay(newRay,  i,  j ,  closestObj,  tmin,  scene);
+    //
+    //
+    //        }
+    
+    return pixelColor;
 }
+
 void colorTriangle(int i , int j, int closestObj, double tmin, parser::Ray ray, parser::Scene *scene){
     // TODO
 }
@@ -500,7 +566,7 @@ int main(int argc, char* argv[])
                         }
                     }
                 }
-                for(int k = 0; k < numberOfTriangles, k++){
+                for(int k = 0; k < numberOfTriangles; k++){
 
                     double t;
                     
@@ -529,7 +595,15 @@ int main(int argc, char* argv[])
                     // TO DO: colorTriangles
                     // TO DO: colorMeshes
                     
-                    colorSpheres(i ,j, closestObj, tmin, ray, &scene);
+                    parser::Vec3f color = computeColor(closestObj, tmin, ray, &scene); // just one function for coloring
+
+
+                    int wherePixelStarts = i*(cam.image_width)*3 + j*3;
+
+
+                    immage[wherePixelStarts] = (unsigned char) color.x;
+                    immage[wherePixelStarts + 1] = (unsigned char) color.y;
+                    immage[wherePixelStarts + 2] = (unsigned char) color.z;                    
                 }
             }
         }
