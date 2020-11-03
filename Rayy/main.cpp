@@ -490,85 +490,58 @@ int main(int argc, char* argv[])
                 
                 parser::Ray ray;
                 double tmin = 40000; // Burayi kontrol et gerek var mi yada yeterli mi ?
-                int closestObj  = -1;
-                
-                Shape closestShape;
                 
                 ray = generateRay(i,j);
                 
+                IntersectionData intersection; // The attributes are the same for all three
+                double t1; // To find minimum
                 for(int k = 0; k < numberOfSpheres; k++){
                     
-                    double t1;
                     t1 = intersectSphere(ray, spheres[k]);
                     
-                    if(t1 >= 1){
+                    if(t1 >= 1){ // BUNU NEDEN 1 diyoruz ya tam anlamadim??
                         
                         if(t1 < tmin){
-                            
                             tmin =t1;
-                            closestObj = k;
-                            closestShape = Shape::Sphere;
+
+                            parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
+
+                            parser::Vec3f sphereCenter = vertexData_PTR[spheres[k].center_vertex_id-1];
+                            parser::Vec3f normal = add(point, mult(sphereCenter, -1));
+                            
+                            intersection.materialId = scenePTR->spheres[k].material_id;
+                            intersection.normal     = normal;
+                            intersection.t = t1;
+                            
                         }
                     }
                 }
                 for(int k = 0; k < numberOfTriangles; k++){
 
-                    double t2;
-                    std::pair<double, parser::Vec3f> tAndNormal;
-                    tAndNormal = intersectTriangle(ray, triangles[k], vertexData_PTR);
+                    // std::pair<double, parser::Vec3f> tAndNormal;
+                    
+                    // tAndNormal = intersectTriangle(ray, triangles[k], vertexData_PTR);
 
-                    t2 = tAndNormal.first;
-                    parser::Vec3f normalVector = tAndNormal.second; // Alparslan - Ucgenin normal vektoru
+                    // t1 = tAndNormal.first;
+                    // parser::Vec3f normalVector = tAndNormal.second;
 
-                    if(t2 >= 1){
+                    // if(t1 >= 1){
 
-                        if(t2 < tmin){
+                    //     if(t1 < tmin){
+                    //         intersection.t          = t1;
+                    //         intersection.normal     = normalVector;
+                    //         intersection.materialId = scenePTR->triangles[k].material_id;
 
-                            tmin =t2;
+                    //         tmin = t1;
 
-                            closestObj = k;
-                            closestShape = Shape::Triangle;
-
-                        }
-                    }
+                    //     }
+                    // }
                 }
                 
                 
                 // TO DO: intersectMesh(ray, meshes[m])
                 
-                if (closestObj != -1){ // TODO - float comparison!
-                    
-                    // TO DO: DO comparison between t values of intersectSphere,intersectTriangle and intersectMesh
-                    //          if the closest object is a sphere then for this i,j th pixel call colorSpheres
-                    //          if the cloesest object is a triangle the for this i,j th pixel call colorTriangle
-                    //          if the cloesest object is a mesh the for this i,j th pixel call colorMeshes
-                    
-                    // TO DO: colorTriangles
-                    // TO DO: colorMeshes
-                    
-                    IntersectionData intersection;
-                    parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
-                    
-                    if(closestShape == Shape::Sphere){
-                        
-                        
-                        parser::Vec3f sphereCenter = vertexData_PTR[spheres[closestObj].center_vertex_id-1];
-                        parser::Vec3f normal = add(point, mult(sphereCenter, -1));
-                        
-                        intersection.materialId = scenePTR->spheres[closestObj].material_id;
-                        intersection.t = tmin;
-                        intersection.normal = normal;
-
-                        
-                        
-                    }else if(closestShape == Shape::Triangle){
-                        // TO DO : Set intersection variable for triangle
-                        
-                    }else if(closestShape == Shape::Mesh){
-                        // TO DO : SET intersection variable for mesh
-                    }
-                    
-                    
+                if(tmin < 40000){
                     parser::Vec3f color = computeColor(ray, intersection, scenePTR->max_recursion_depth, &scene); // just one function for coloring
                     
                     
