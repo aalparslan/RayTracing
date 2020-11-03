@@ -37,7 +37,6 @@ parser::Sphere *spheres;
 parser::Triangle *triangles;
 parser::Mesh  *meshes;
 
-
 parser::Camera cam;
 parser::Vec3f camUVector;
 //int sizeX, sizeY;
@@ -81,7 +80,8 @@ parser::Vec3f normalize(parser::Vec3f v){
     
 }
 
-void loadCamera(parser::Camera x){
+
+void loadCamera(parser::Camera &x){
     cam.position = x.position;
     cam.gaze = x.gaze;
     cam.up = x.up;
@@ -486,6 +486,7 @@ int main(int argc, char* argv[])
         initImage(&scene);
         
         for (int i = 0; i < cam.image_width; i++){
+            std::cout << 'X' << std::flush; // Programin hizini intuitive anlamak icin koydum sadece
             for(int j = 0; j < cam.image_height; j++){
                 
                 parser::Ray ray;
@@ -521,7 +522,7 @@ int main(int argc, char* argv[])
 
                     std::pair<double, parser::Vec3f> tAndNormal;
                     
-                    tAndNormal = intersectTriangle(ray, scene.triangles[k], scene.vertex_data);
+                    tAndNormal = intersectTriangle(ray, scene.triangles[k].indices, scene.vertex_data);
 
                     t1 = tAndNormal.first;
                     parser::Vec3f normalVector = tAndNormal.second;
@@ -538,10 +539,34 @@ int main(int argc, char* argv[])
                         }
                     }
                 }
+                // Intersect meshes
+                for(int k = 0; k < scene.meshes.size(); k++){
+
+                    std::vector<std::pair<double, parser::Vec3f>> tAndNormalVector;
+                    
+                    tAndNormalVector = intersectMesh(ray, scene.meshes[k].faces, scene.vertex_data);
+
+                    for(int counter = 0; counter < tAndNormalVector.size(); counter++){
+                        // Iterate over each face
+                        t1 = tAndNormalVector[counter].first;
+
+                        parser::Vec3f normalVector = tAndNormalVector[counter].second;
+
+                        if(t1 >= 1){
+
+                            if(t1 < tmin){
+                                intersection.t          = t1;
+                                intersection.normal     = normalVector;
+                                intersection.materialId = scene.meshes[k].material_id;
+
+                                tmin = t1;
+
+                            }
+                        }
+                    }
+                }
                 
                 
-                
-                // TO DO: intersectMesh(ray, meshes[m])
                 
                 if(tmin < 40000){
                     parser::Vec3f color = computeColor(ray, intersection, scenePTR->max_recursion_depth, &scene); // just one function for coloring
@@ -550,15 +575,16 @@ int main(int argc, char* argv[])
                     int wherePixelStarts = i*(cam.image_width)*3 + j*3;
                     
                     
-                    immage[wherePixelStarts] = (unsigned char) color.x;
+                    immage[wherePixelStarts]    = (unsigned char) color.x;
                     immage[wherePixelStarts + 1] = (unsigned char) color.y;
                     immage[wherePixelStarts + 2] = (unsigned char) color.z;
                 }
             }
         }
         
+        
         // For every camera write another ppm file image.
-        write_ppm("test.ppm", immage, cam.image_width, cam.image_height);
+        write_ppm(cam.image_name.c_str(), immage, cam.image_width, cam.image_height);
     }
     
 }

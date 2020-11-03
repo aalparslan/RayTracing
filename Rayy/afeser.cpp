@@ -1,6 +1,7 @@
 #include "helper.hpp"
+#include "afeser.hpp"
 
-std::pair<double, parser::Vec3f>  intersectTriangle(const parser::Ray &ray, const parser::Triangle& triangle, std::vector<parser::Vec3f> &vertexData){
+std::pair<double, parser::Vec3f> intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
     /*
      Return t as double and normal vector as Vec3f.
      t = -1 if no intersection exists.
@@ -21,17 +22,17 @@ std::pair<double, parser::Vec3f>  intersectTriangle(const parser::Ray &ray, cons
 
     // Triangle constants...
     // Notice the indices start from 1, so decrement is needed
-    double x_a = vertexData[triangle.indices.v0_id-1].x;
-    double y_a = vertexData[triangle.indices.v0_id-1].y;
-    double z_a = vertexData[triangle.indices.v0_id-1].z;
+    double x_a = vertexData[face.v0_id-1].x;
+    double y_a = vertexData[face.v0_id-1].y;
+    double z_a = vertexData[face.v0_id-1].z;
 
-    double x_b = vertexData[triangle.indices.v1_id-1].x;
-    double y_b = vertexData[triangle.indices.v1_id-1].y;
-    double z_b = vertexData[triangle.indices.v1_id-1].z;
+    double x_b = vertexData[face.v1_id-1].x;
+    double y_b = vertexData[face.v1_id-1].y;
+    double z_b = vertexData[face.v1_id-1].z;
 
-    double x_c = vertexData[triangle.indices.v2_id-1].x;
-    double y_c = vertexData[triangle.indices.v2_id-1].y;
-    double z_c = vertexData[triangle.indices.v2_id-1].z;
+    double x_c = vertexData[face.v2_id-1].x;
+    double y_c = vertexData[face.v2_id-1].y;
+    double z_c = vertexData[face.v2_id-1].z;
 
 
     // Matrix elements...  
@@ -92,6 +93,26 @@ std::pair<double, parser::Vec3f>  intersectTriangle(const parser::Ray &ray, cons
     }else{
         return std::pair<double, parser::Vec3f>(t, normal);
     }
+
+
+}
+std::vector<std::pair<double, parser::Vec3f>> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData){
+    /*
+    This function is actually a set of combination for triangles.
+    The structure implies there is a vector of faces that specify 3 vertex coordinates.
+    
+    Given implementation is straightforward, iterate 'intersectTriangle' and return a vector of pairs which include
+    t value and surface normal.
+    */
+   // Return all normals and t values
+   std::vector<std::pair<double, parser::Vec3f>> allReturns(faces.size());
+
+   // Do for each triangle...
+   for(int counter = 0; counter < faces.size(); counter++){
+       allReturns[counter] = intersectTriangle(ray, faces[counter], vertexData);
+   }
+
+   return allReturns;
 
 
 }
