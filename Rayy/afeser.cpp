@@ -1,56 +1,5 @@
+#include "helper.hpp"
 
-
-double intersectSphere(parser::Ray ray, parser::Sphere sphere){ // TODO - neden double bu?? struct yapilari float??
-    
-    double A, B, C;  // ---> qudritic func constants
-    
-    double delta;
-    
-    parser::Vec3f scenter = vertexData_PTR[sphere.center_vertex_id -1];
-    
-    double sradius = sphere.radius;
-    
-
-    double t, t1, t2;
-
-    C = (ray.a.x-scenter.x)*(ray.a.x-scenter.x) + (ray.a.y-scenter.y)*(ray.a.y-scenter.y) + (ray.a.z-scenter.z)*(ray.a.z-scenter.z) -sradius*sradius;
-    
-    B = 2*ray.b.x*(ray.a.x-scenter.x) + 2*ray.b.y*(ray.a.y-scenter.y) + 2*ray.b.z*(ray.a.z-scenter.z);
-    
-    A = ray.b.x*ray.b.x + ray.b.y*ray.b.y + ray.b.z*ray.b.z;
-    
-    delta = B*B-4*A*C;
-    
-    if(delta < 0 )
-        return -1; // TODO - float comparison bazen yanlis sonuc verebilir sanki??
-    else if(delta == 0 ){
-        
-        t = -B / (2*A);
-    }else{
-        
-        double tmp;
-        
-        delta = sqrt(delta);
-        A = 2*A;
-        t1 = (-B + delta) / A;
-        t2 = (-B - delta) / A;
-        
-        if(t2 < t1){
-            tmp = t2;
-            t2 = t1;
-            t1 = tmp;
-        }
-        
-        if(t1 >= 1.0 )
-            t = t1;
-        else{
-            t = -1;
-        }
-    }
-    
-    return t;
-    
-}
 double intersectTriangle(parser::Ray ray, parser::Triangle triangle){
     /*
      (Snyder & Barr, 1987) method

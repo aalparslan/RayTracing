@@ -1,7 +1,6 @@
 // Dosya uzun oldugu icin kafam karisti, bu dosyalara boldum simdilik
-#include "helper.hpp"
-#include "intersection.cpp"
-#include "color.cpp"
+#include "helper.hpp" // Other includes...
+#include "afeser.cpp" // Functions
 
 
 using namespace std;
