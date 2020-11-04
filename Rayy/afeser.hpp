@@ -21,6 +21,7 @@ typedef struct PrecomputeNormalVectors{
 extern PrecomputedNormalVectors precomputedNormalVectors;
 
 void precomputeNormalVectors(const parser::Scene &scene); // Precompute the data structure above
+void freeNormalVectorMemory(); // Free memory at the end
 
 double  intersectTriangle(
     const parser::Ray &ray, 

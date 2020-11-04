@@ -549,5 +549,10 @@ int main(int argc, char* argv[])
         // For every camera write another ppm file image.
         write_ppm(cam.image_name.c_str(), immage, cam.image_width, cam.image_height);
     }
+
+    // Free memory at the end
+    freeNormalVectorMemory();
+
+    return 0;
     
 }

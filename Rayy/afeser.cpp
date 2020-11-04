@@ -60,7 +60,15 @@ void precomputeNormalVectors(const parser::Scene &scene){
             (*(*precomputedNormalVectors.meshNormalVectors)[meshCounter])[triangleCounter] = computeNormalVector(face, vertex_data);
         }
     }
-
+}
+void freeNormalVectorMemory(){
+    // Free triangle vector
+    delete precomputedNormalVectors.simpleTriangleNormalVectors;
+    
+    // Free mesh vectors
+    for(int meshCounter = 0; meshCounter < (*precomputedNormalVectors.meshNormalVectors).size(); meshCounter++){
+        delete (*precomputedNormalVectors.meshNormalVectors)[meshCounter];
+    }
 }
 
 double intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
