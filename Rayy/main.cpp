@@ -9,8 +9,8 @@
 #define INFINITE 40000
 using namespace std;
 
-
-
+// Look afeser.hpp for info..
+PrecomputedNormalVectors precomputedNormalVectors;
 
 typedef struct IntersectionData
 {
@@ -335,18 +335,15 @@ IntersectionData  intersectRay(parser::Ray ray, double treshold){
     // Intersect triangle
     for(int k = 0; k < scenePTR->triangles.size(); k++){
         
-        std::pair<double, parser::Vec3f> tAndNormal;
         
-        tAndNormal = intersectTriangle(ray, scenePTR->triangles[k].indices, scenePTR->vertex_data);
+        t1 = intersectTriangle(ray, scenePTR->triangles[k].indices, scenePTR->vertex_data);
         
-        t1 = tAndNormal.first;
-        parser::Vec3f normalVector = tAndNormal.second;
         
         if(t1 >= treshold){
             
             if(t1 < tmin){
                 intersection.t          = t1;
-                intersection.normal     = normalVector;
+                intersection.normal     = (*precomputedNormalVectors.simpleTriangleNormalVectors)[k];
                 intersection.materialId = scenePTR->triangles[k].material_id;
                 
                 tmin = t1;
@@ -357,21 +354,19 @@ IntersectionData  intersectRay(parser::Ray ray, double treshold){
     // Intersect meshes
     for(int k = 0; k < scenePTR->meshes.size(); k++){
         
-        std::vector<std::pair<double, parser::Vec3f>> tAndNormalVector;
+        std::vector<double> tAndNormalVector;
         
         tAndNormalVector = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data);
         
         for(int counter = 0; counter < tAndNormalVector.size(); counter++){
             // Iterate over each face
-            t1 = tAndNormalVector[counter].first;
-            
-            parser::Vec3f normalVector = tAndNormalVector[counter].second;
+            t1 = tAndNormalVector[counter];
             
             if(t1 >= treshold){
                 
                 if(t1 < tmin){
                     intersection.t          = t1;
-                    intersection.normal     = normalVector;
+                    intersection.normal     = (*(*precomputedNormalVectors.meshNormalVectors)[k])[counter];
                     intersection.materialId = scenePTR->meshes[k].material_id;
                     
                     tmin = t1;
@@ -515,6 +510,9 @@ int main(int argc, char* argv[])
     parser::Scene scene;
     
     scene.loadFromXml(argv[1]);
+
+    // Precompute normal vectors
+    precomputeNormalVectors(scene);
     
     for(auto x = scene.cameras.begin(); x < scene.cameras.end(); x++){
         

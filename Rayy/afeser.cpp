@@ -1,7 +1,69 @@
 #include "helper.hpp"
 #include "afeser.hpp"
 
-std::pair<double, parser::Vec3f> intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
+
+parser::Vec3f computeNormalVector(const parser::Face &face, const std::vector<parser::Vec3f> &vertex_data){
+    // Triangle constants...
+    // Notice the indices start from 1, so decrement is needed
+    double x_a = vertex_data[face.v0_id-1].x;
+    double y_a = vertex_data[face.v0_id-1].y;
+    double z_a = vertex_data[face.v0_id-1].z;
+
+    double x_b = vertex_data[face.v1_id-1].x;
+    double y_b = vertex_data[face.v1_id-1].y;
+    double z_b = vertex_data[face.v1_id-1].z;
+
+    double x_c = vertex_data[face.v2_id-1].x;
+    double y_c = vertex_data[face.v2_id-1].y;
+    double z_c = vertex_data[face.v2_id-1].z;
+    // Calculate the edge vectors
+    // Direction is from second vertex to first and third
+    parser::Vec3f edge1, edge2, normal;
+
+    edge1.x = x_a - x_b;
+    edge1.y = y_a - y_b;
+    edge1.z = z_a - z_b;
+
+    edge2.x = x_c - x_b;
+    edge2.y = y_c - y_b;
+    edge2.z = z_c - z_b;
+    
+    
+    normal = vectorNormalize(vectorCrossProduct(edge2, edge1));
+
+    return normal;
+
+}
+void precomputeNormalVectors(const parser::Scene &scene){
+    // Allocate for simple triangles
+    precomputedNormalVectors.simpleTriangleNormalVectors = new std::vector<parser::Vec3f>(scene.triangles.size());
+
+    // Allocate for triangles inside a mesh
+    precomputedNormalVectors.meshNormalVectors = new std::vector<std::vector<parser::Vec3f>*>(scene.meshes.size());
+
+    for(int triangleCounter = 0; triangleCounter < scene.triangles.size(); triangleCounter++){
+        auto &face        = scene.triangles[triangleCounter].indices;
+        auto &vertex_data = scene.vertex_data;
+        
+        (*precomputedNormalVectors.simpleTriangleNormalVectors)[triangleCounter] = computeNormalVector(face, vertex_data);
+    }
+
+    // Precompute for meshes
+    for(int meshCounter = 0; meshCounter < scene.meshes.size(); meshCounter++){
+        // Iterate over triangles in each mesh
+        (*precomputedNormalVectors.meshNormalVectors)[meshCounter] = new std::vector<parser::Vec3f>(scene.meshes[meshCounter].faces.size());
+
+        for(int triangleCounter = 0; triangleCounter < scene.meshes[meshCounter].faces.size(); triangleCounter++){
+            auto &face        = scene.meshes[meshCounter].faces[triangleCounter];
+            auto &vertex_data = scene.vertex_data;
+
+            (*(*precomputedNormalVectors.meshNormalVectors)[meshCounter])[triangleCounter] = computeNormalVector(face, vertex_data);
+        }
+    }
+
+}
+
+double intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
     /*
      Return t as double and normal vector as Vec3f.
      t = -1 if no intersection exists.
@@ -9,8 +71,6 @@ std::pair<double, parser::Vec3f> intersectTriangle(const parser::Ray &ray, const
      (Snyder & Barr, 1987) method
      Textbook Page 78 notation used
      */
-    // TODO - ray.a balangic noktasi diye varsayiyorum, kontrol etcem
-    // TODO - untested!
     // Ray constants...
     double x_e = ray.a.x;
     double y_e = ray.a.y;
@@ -68,20 +128,6 @@ std::pair<double, parser::Vec3f> intersectTriangle(const parser::Ray &ray, const
     gamma = gamma / M;
     t     = t     / M * (-1);
 
-    // Calculate the edge vectors
-    // Direction is from second vertex to first and third
-    parser::Vec3f edge1, edge2, normal;
-
-    edge1.x = x_a - x_b;
-    edge1.y = y_a - y_b;
-    edge1.z = z_a - z_b;
-
-    edge2.x = x_c - x_b;
-    edge2.y = y_c - y_b;
-    edge2.z = z_c - z_b;
-    
-    // TODO - edge order
-    normal = vectorNormalize(vectorCrossProduct(edge2, edge1));
 
     // TODO -> t_0 icin e noktasini, yani camera position aliyorum, bu yanlis olabilir mi?? cunku canvas ile kamera arasindaysa gormemeli sanirim? ya da gormeli mi :)
     if (
@@ -89,14 +135,15 @@ std::pair<double, parser::Vec3f> intersectTriangle(const parser::Ray &ray, const
         gamma < 0 || gamma + beta > 1 ||
         beta < 0
     ){
-        return std::pair<double, parser::Vec3f>(-1, normal);
+        // Will not use it anymore, return a null normal vector
+        return -1;
     }else{
-        return std::pair<double, parser::Vec3f>(t, normal);
+        return t;
     }
 
 
 }
-std::vector<std::pair<double, parser::Vec3f>> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData){
+std::vector<double> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData){
     /*
     This function is actually a set of combination for triangles.
     The structure implies there is a vector of faces that specify 3 vertex coordinates.
@@ -105,7 +152,7 @@ std::vector<std::pair<double, parser::Vec3f>> intersectMesh(const parser::Ray &r
     t value and surface normal.
     */
    // Return all normals and t values
-   std::vector<std::pair<double, parser::Vec3f>> allReturns(faces.size());
+   std::vector<double> allReturns(faces.size());
 
    // Do for each triangle...
    for(int counter = 0; counter < faces.size(); counter++){
