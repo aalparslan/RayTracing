@@ -6,13 +6,10 @@
 #include "helper.hpp" // Other includes...
 #include "afeser.hpp" // Functions
 
-
+#define INFINITE 40000
 using namespace std;
-typedef unsigned char RGB[3];
 
-enum class Shape { Sphere,
-    Triangle,
-    Mesh };
+
 
 
 typedef struct IntersectionData
@@ -45,7 +42,6 @@ double halfPixelW, halfPixelH;
 
 
 
-char outFileName[80];
 
 //RGB **image;
 unsigned char* immage;
@@ -139,12 +135,12 @@ void loadScene(parser::Scene * scene){
     
     for(int i= 0; i < numberOfTriangles; i++){
         triangles[i].material_id = scene->triangles[i].material_id;
-        triangles[i].indices = scene->triangles[i].indices; //copy by reference
+        triangles[i].indices = scene->triangles[i].indices;
     }
     
     for(int i = 0; i <numberOfMeshes; i++){
         meshes[i].material_id = scene->meshes[i].material_id;
-        meshes[i].faces = scene->meshes[i].faces; // change it si copying deeply
+        meshes[i].faces = scene->meshes[i].faces;
     }
     
 }
@@ -191,16 +187,12 @@ void initImage(parser::Scene *scene){
 
 parser::Ray generateRay(int i, int j){
     
-    parser::Ray tmp;
-    // parser::Vec3f su, sv, s;
-    tmp.a = cam.position;
-    
     parser::Vec3f m;
     parser::Vec3f q;
     parser::Vec3f result;
     double su, sv;
     
-    m = add(cam.position, mult(mult(cam.gaze, -1) , -cam.near_distance)); //gaze negatif olabilir kontrol et.
+    m = add(cam.position, mult(cam.gaze, cam.near_distance));
     q = add(m, add(mult(camUVector,cam.near_plane.x ), mult(cam.up,cam.near_plane.w) ));
     
     su = 0.5* pixelW + j*pixelW;
@@ -209,8 +201,16 @@ parser::Ray generateRay(int i, int j){
     result = add(q, add(mult(camUVector, su), mult(cam.up, -sv)));
     
     
-    tmp.b = result;
-    return tmp;
+    result.x = result.x - cam.position.x;
+    result.y = result.y - cam.position.y;
+    result.z = result.z - cam.position.z;
+    
+    result = normalize(result);
+    
+    parser::Ray ray;
+    ray.a = cam.position;
+    ray.b = result;
+    return ray;
     
 }
 
@@ -258,7 +258,7 @@ double intersectSphere(parser::Ray ray, parser::Sphere sphere){ // TODO - neden 
         if(t1 >= 1.0 )
             t = t1;
         else{
-            t = -1;
+            t = t1;
         }
     }
     
@@ -288,44 +288,161 @@ float getPhongExponent(int materialID){
 }
 
 
-int clamp(float maximum,float givenColor){
+parser::Vec3f subtract(parser::Vec3f a, parser::Vec3f b){
     
-    int result = (int) ((givenColor * 256) / maximum);
+    a.x -= b.x;
+    a.y -= b.y;
+    a.z -= b.z;
     
-    return result;
+    return a;
+}
+
+
+IntersectionData  intersectRay(parser::Ray ray, double treshold){
+    
+    
+    double tmin = INFINITE;
+    
+    IntersectionData intersection; // The attributes are the same for all three
+    double t1; // To find minimum
+    
+    for(int k = 0; k < numberOfSpheres; k++){
+        
+        t1 = intersectSphere(ray, spheres[k]);
+
+        if(t1 >= treshold){ // BUNU NEDEN 1 diyoruz ya tam anlamadim?? --> treshold intersection pointin nerde
+                            //olacagini belirlerken kullaniliyor. 1 den buyuk oldugu durumda image planin gorunmeyen kismiyla ilgilenmiyoruz demek
+            
+            
+            if(t1 < tmin){
+                tmin =t1;
+                
+                
+                parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
+                
+                parser::Vec3f sphereCenter = vertexData_PTR[spheres[k].center_vertex_id-1];
+                parser::Vec3f normal = add(point, mult(sphereCenter, -1));
+                
+                intersection.materialId = scenePTR->spheres[k].material_id;
+                intersection.normal     = normal;
+                intersection.t = t1;
+                
+            }
+        }
+    }
+    
+    
+    // Intersect triangle
+    for(int k = 0; k < scenePTR->triangles.size(); k++){
+        
+        std::pair<double, parser::Vec3f> tAndNormal;
+        
+        tAndNormal = intersectTriangle(ray, scenePTR->triangles[k].indices, scenePTR->vertex_data);
+        
+        t1 = tAndNormal.first;
+        parser::Vec3f normalVector = tAndNormal.second;
+        
+        if(t1 >= treshold){
+            
+            if(t1 < tmin){
+                intersection.t          = t1;
+                intersection.normal     = normalVector;
+                intersection.materialId = scenePTR->triangles[k].material_id;
+                
+                tmin = t1;
+                
+            }
+        }
+    }
+    // Intersect meshes
+    for(int k = 0; k < scenePTR->meshes.size(); k++){
+        
+        std::vector<std::pair<double, parser::Vec3f>> tAndNormalVector;
+        
+        tAndNormalVector = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data);
+        
+        for(int counter = 0; counter < tAndNormalVector.size(); counter++){
+            // Iterate over each face
+            t1 = tAndNormalVector[counter].first;
+            
+            parser::Vec3f normalVector = tAndNormalVector[counter].second;
+            
+            if(t1 >= treshold){
+                
+                if(t1 < tmin){
+                    intersection.t          = t1;
+                    intersection.normal     = normalVector;
+                    intersection.materialId = scenePTR->meshes[k].material_id;
+                    
+                    tmin = t1;
+                    
+                }
+            }
+        }
+    }
+    
+    intersection.t = tmin;
+    
+    return intersection;
     
 }
 
-void pixelColorSetToZero(int wherePixelStarts){
-    immage[wherePixelStarts] = (unsigned char) 0;
-    immage[wherePixelStarts +1] = (unsigned char) 0;
-    immage[wherePixelStarts +2] = (unsigned char) 0;
+
+parser::Vec3f computeLightContribution(parser::Vec3f point, parser::PointLight light){
+    
+    //E(d) == I / d^2
+    
+    parser::Vec3f lightDirection = subtract(light.position, point);
+    double lightDistance = lengTh(lightDirection);
+    parser::Vec3f irradianceContribution = vectorDivision(light.intensity, lightDistance * lightDistance);
+    return irradianceContribution;
+    
 }
 
+parser::Vec3f computeDiffuse(int materialID, parser::Vec3f normal, parser::Vec3f normalizedLightDirection, parser::Vec3f irradiance ){
+    
+    //double cosTeta = dot(normal, normalizedLightDirection);
+    double cosTheta = fmax(0.0f,  dot(normalizedLightDirection, normal));
+    
+    
+    parser::Vec3f diffuse = vectorMultiplication(irradiance, cosTheta);
+    parser::Vec3f diffuseReflectance = getDiffuseReflectance(materialID);
+    // Multiplying with kd
+    diffuse.x *= diffuseReflectance.x;
+    diffuse.y *= diffuseReflectance.y;
+    diffuse.z *= diffuseReflectance.z;
+    
+    return diffuse;
+}
+
+
+parser::Vec3f computeSpecular(int materialID, parser::Vec3f normal, parser::Vec3f irradiance, parser::Vec3f normalizedHalfVector ){
+    
+    float phongEx = scenePTR->materials[materialID-1].phong_exponent;
+    float phongExponentCosAlpha =  pow(max(0.0f,(float) dot(normalize(normal), normalizedHalfVector)), phongEx );
+    // (cosAlpha)^ns * E(d)
+    parser::Vec3f specular = vectorMultiplication(irradiance, phongExponentCosAlpha);
+    parser::Vec3f specularReflectance = getspecularReflectance(materialID);
+    
+    // Multiplying with specular coeff
+    specular.x *= specularReflectance.x;
+    specular.y *= specularReflectance.y;
+    specular.z *= specularReflectance.z;
+    
+    return specular;
+}
 
 
 
 parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int recursionNumber,parser::Scene *scene){
     
-    
-    int materialID = intersection.materialId;
-    double tmin = intersection.t;
-    parser::Vec3f normal = intersection.normal;
-    
-    
-    
     parser::Vec3f pixelColor = {};
-    
-    
-    
+    int materialID = intersection.materialId;
+    parser::Vec3f point = add(ray.a, mult(ray.b, intersection.t)); // find point on the object.
+    parser::Vec3f eyeVector = subtract(ray.a, point);
+    parser::Vec3f normalizedEyeVector = normalize(eyeVector);
     parser::Vec3f ambientReflectance = getAmbientReflectance(materialID);
     parser::Vec3f ambienLight = scenePTR->ambient_light;
-    
-
-    //    immage[wherePixelStarts] = (unsigned char) (ambienLight.x * ambientReflectance.x);//
-    //    immage[wherePixelStarts + 1] = (unsigned char) (ambienLight.y * ambientReflectance.y);// Add ambient component
-    //    immage[wherePixelStarts + 2] = (unsigned char) (ambienLight.z * ambientReflectance.z);//
-    
     pixelColor.x = (ambienLight.x * ambientReflectance.x);
     pixelColor.y = (ambienLight.y * ambientReflectance.y);
     pixelColor.z = (ambienLight.z * ambientReflectance.z);
@@ -333,140 +450,60 @@ parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int 
     
     for(auto y = scene->point_lights.begin(); y < scene->point_lights.end(); y++){ //Her bir light source icin D ve S hesaplar
         
-        
-        
-        //// Diffuse calculation begins...
         parser::Vec3f lightPosition = (*y).position;
-        parser::Vec3f lightIntensity = (*y).intensity;
-        parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
+        parser::Vec3f lightDirection = add(lightPosition, mult(point, -1));
+        parser::Vec3f normalizedLightDirection = normalize(lightDirection); //  L - P = toLight
+        parser::Ray shadowRay;
+        parser::Vec3f intOffset = mult(normalizedLightDirection, scenePTR->shadow_ray_epsilon);
+        shadowRay.a = add(point, intOffset);
+        shadowRay.b = normalizedLightDirection;
+        double shadowIntersection = intersectRay(shadowRay, 0).t; //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
         
-//        parser::Vec3f sphereCenter = vertexData_PTR[spheres[closestObj].center_vertex_id-1];
-//
-//        parser::Vec3f normal = add(point, mult(sphereCenter, -1)); // P - Center = Nomal vector
-        
-        normal = normalize(normal);
-        
-        //        bool pointInShadow = isPointInShadow(point, (*y));
-        //
-        //        if(pointInShadow){
-        //            continue;
-        //        }
-        
-        parser::Vec3f toLight = add(lightPosition, mult(point, -1)); //  L - P = toLight
-        toLight = normalize(toLight);
-        
-        double cosTeta = dot(normal, toLight);
-        parser::Vec3f diffuseReflectance = getDiffuseReflectance(materialID);
-        double lengthToLight = lengTh(toLight);
-        
-        parser::Vec3f AttenuatedLightIntensity;
-        AttenuatedLightIntensity.x = lightIntensity.x/lengthToLight;
-        AttenuatedLightIntensity.y = lightIntensity.y/lengthToLight;
-        AttenuatedLightIntensity.z = lightIntensity.z/lengthToLight;
-        
-        
-        parser::Vec3f maxColor;
-        maxColor.x = 2*lightIntensity.x + ambienLight.x; // 2I_{attenuated} + Ambient Light = D + A + S
-        maxColor.y = 2*lightIntensity.y + ambienLight.y;
-        maxColor.z = 2*lightIntensity.z + ambienLight.z;
-        
-        float diffuseR =0;
-        float diffuseG =0;
-        float diffuseB =0;
-        
-        float spcecularR = 0;
-        float spcecularG = 0;
-        float spcecularB = 0;
-        
-        if(cosTeta > 0) {
+        if(shadowIntersection >= lengTh(lightDirection)){
             
             
-            //// Diffuse set variables...
-            diffuseR =  (diffuseReflectance.x * cosTeta * AttenuatedLightIntensity.x / pow(lengthToLight, 2));//
-            diffuseG =  (diffuseReflectance.y * cosTeta * AttenuatedLightIntensity.y / pow(lengthToLight, 2));//
-            diffuseB =  (diffuseReflectance.z * cosTeta * AttenuatedLightIntensity.z / pow(lengthToLight, 2));//
+            parser::Vec3f irradiance = computeLightContribution(point, (*y));
+            parser::Vec3f diffuseContribution = computeDiffuse(materialID,  intersection.normal, normalizedLightDirection, irradiance );
             
+            pixelColor = vectorAddition(diffuseContribution, pixelColor); // add diffuse contribution to the pixel color
             
+            // compute specular contribution
+            parser::Vec3f normalizedHalfVector = normalize(vectorAddition(normalizedLightDirection, normalizedEyeVector));
+            parser::Vec3f specularContribution = computeSpecular(materialID, intersection.normal, irradiance, normalizedHalfVector );
+            pixelColor = vectorAddition(specularContribution, pixelColor); // add specular contribution to the pixel color
         }
-        
-        
-        //// Specular specific variables...
-        parser::Vec3f toEye = add(cam.position, mult(point, -1)); // Camera - P = toEye
-        toEye = normalize(toEye);
-        parser::Vec3f halfVector = add(toEye, toLight);
-        halfVector = normalize(halfVector);
-        double consBeta = dot(normal, halfVector);
-        parser::Vec3f specularReflectance = getspecularReflectance(materialID);
-        float phongExponent = getPhongExponent(materialID);
-        
-        if(consBeta > 0){
-            //// Set specular variables
-            spcecularR =  (AttenuatedLightIntensity.x * specularReflectance.x * pow(consBeta, phongExponent));//
-            spcecularG =  (AttenuatedLightIntensity.y * specularReflectance.y * pow(consBeta, phongExponent));//
-            spcecularB =  (AttenuatedLightIntensity.z * specularReflectance.z * pow(consBeta, phongExponent));//
+        else{
             
-        }
-        
-        if(diffuseR  > scenePTR->shadow_ray_epsilon || diffuseB >scenePTR->shadow_ray_epsilon || diffuseG  >scenePTR->shadow_ray_epsilon ){
-            
-            //pixelColorSetToZero( wherePixelStarts);
-            
-            //            immage[wherePixelStarts] += (unsigned char) clamp(maxColor.x,(ambienLight.x * ambientReflectance.x) +  diffuseR + spcecularR);
-            //            immage[wherePixelStarts+1] += (unsigned char) clamp(maxColor.y,(ambienLight.y * ambientReflectance.y) + diffuseG + spcecularG);
-            //            immage[wherePixelStarts +2] += (unsigned char) clamp(maxColor.z,(ambienLight.z * ambientReflectance.z) + diffuseB + spcecularB);
-            
-            pixelColor.x = clamp(maxColor.x,(ambienLight.x * ambientReflectance.x) +  diffuseR + spcecularR);
-            pixelColor.y = clamp(maxColor.y,(ambienLight.y * ambientReflectance.y) + diffuseG + spcecularG);
-            pixelColor.z = clamp(maxColor.z,(ambienLight.z * ambientReflectance.z) + diffuseB + spcecularB);
-            
+            continue;
         }
         
     }
     
+    parser::Vec3f mirrorComponenet = scene->materials[materialID-1].mirror;
     
-    //parser::Vec3f mirrorComponenet = scene->materials[spheres[closestObj].material_id -1].mirror;
+    if(recursionNumber > 0 && (mirrorComponenet.x > 0 || mirrorComponenet.y > 0 || mirrorComponenet.z > 0)){
+        
+        parser::Ray reflectedRay;
+        float cosTheta = dot(intersection.normal, normalizedEyeVector);
+        reflectedRay.b = add(mult(normalizedEyeVector, -1), mult(intersection.normal, 2*cosTheta));
+        reflectedRay.a = add(point ,mult(reflectedRay.b, scenePTR->shadow_ray_epsilon) );
+        IntersectionData reflectedIntersection = intersectRay(reflectedRay,0); //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
+        
+        if(reflectedIntersection.t < INFINITE && reflectedIntersection.t > 0){ //  ray hits an object
+            
+            //parser::Ray ray, IntersectionData intersection, int recursionNumber,parser::Scene *scene
+            parser::Vec3f reflectedRadiance = computeColor(reflectedRay, reflectedIntersection, recursionNumber-1, scene);
+            reflectedRadiance.x *= mirrorComponenet.x;
+            reflectedRadiance.y *= mirrorComponenet.y;
+            reflectedRadiance.z *= mirrorComponenet.z;
+            pixelColor = add(reflectedRadiance, pixelColor);
+        }
+    }
     
-    
-    
-    //        if(scenePTR->max_recursion_depth > 0 && NotZero(mirrorComponenet)){
-    //
-    //            scenePTR->max_recursion_depth = scenePTR->max_recursion_depth -1;
-    //
-    //            parser::Vec3f direction;
-    //            direction.x = cam.position.x -point.x;
-    //            direction.y = cam.position.x -point.y;
-    //            direction.z = cam.position.x -point.z;
-    //
-    //            direction = normalize(direction);
-    //            normal = normalize(normal);
-    //
-    //            double CosAngle = dot(direction, normal);
-    //
-    //            parser::Vec3f wr = add(mult(direction, -1), mult( mult(normal, 2), CosAngle ));
-    //
-    //            wr = normalize(wr);
-    //
-    //            parser::Ray newRay;
-    //
-    //            newRay.a.x = point.x;
-    //            newRay.a.y = point.y;
-    //            newRay.a.z = point.z;
-    //
-    //            newRay.b.x = point.x + wr.x;
-    //            newRay.b.y = point.y + wr.y;
-    //            newRay.b.z = point.z + wr.z;
-    //
-    //
-    //            sendRay(newRay,  i,  j ,  closestObj,  tmin,  scene);
-    //
-    //
-    //        }
-    
+    pixelColor.x = min(max(0.0f, pixelColor.x), 255.0f);
+    pixelColor.y = min(max(0.0f, pixelColor.y), 255.0f);
+    pixelColor.z = min(max(0.0f, pixelColor.z), 255.0f);
     return pixelColor;
-}
-
-void colorTriangle(int i , int j, int closestObj, double tmin, parser::Ray ray, parser::Scene *scene){
-    // TODO
 }
 
 
@@ -490,85 +527,13 @@ int main(int argc, char* argv[])
             for(int j = 0; j < cam.image_height; j++){
                 
                 parser::Ray ray;
-                double tmin = 40000; // Burayi kontrol et gerek var mi yada yeterli mi ?
-                
+
                 ray = generateRay(i,j);
                 
                 IntersectionData intersection; // The attributes are the same for all three
-                double t1; // To find minimum
-                for(int k = 0; k < numberOfSpheres; k++){
-                    
-                    t1 = intersectSphere(ray, spheres[k]);
-                    
-                    if(t1 >= 1){ // BUNU NEDEN 1 diyoruz ya tam anlamadim??
-                        
-                        if(t1 < tmin){
-                            tmin =t1;
-
-                            parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
-
-                            parser::Vec3f sphereCenter = vertexData_PTR[spheres[k].center_vertex_id-1];
-                            parser::Vec3f normal = add(point, mult(sphereCenter, -1));
-                            
-                            intersection.materialId = scenePTR->spheres[k].material_id;
-                            intersection.normal     = normal;
-                            intersection.t = t1;
-                            
-                        }
-                    }
-                }
-                // Intersect triangle
-                for(int k = 0; k < scene.triangles.size(); k++){
-
-                    std::pair<double, parser::Vec3f> tAndNormal;
-                    
-                    tAndNormal = intersectTriangle(ray, scene.triangles[k].indices, scene.vertex_data);
-
-                    t1 = tAndNormal.first;
-                    parser::Vec3f normalVector = tAndNormal.second;
-
-                    if(t1 >= 1){
-
-                        if(t1 < tmin){
-                            intersection.t          = t1;
-                            intersection.normal     = normalVector;
-                            intersection.materialId = scene.triangles[k].material_id;
-
-                            tmin = t1;
-
-                        }
-                    }
-                }
-                // Intersect meshes
-                for(int k = 0; k < scene.meshes.size(); k++){
-
-                    std::vector<std::pair<double, parser::Vec3f>> tAndNormalVector;
-                    
-                    tAndNormalVector = intersectMesh(ray, scene.meshes[k].faces, scene.vertex_data);
-
-                    for(int counter = 0; counter < tAndNormalVector.size(); counter++){
-                        // Iterate over each face
-                        t1 = tAndNormalVector[counter].first;
-
-                        parser::Vec3f normalVector = tAndNormalVector[counter].second;
-
-                        if(t1 >= 1){
-
-                            if(t1 < tmin){
-                                intersection.t          = t1;
-                                intersection.normal     = normalVector;
-                                intersection.materialId = scene.meshes[k].material_id;
-
-                                tmin = t1;
-
-                            }
-                        }
-                    }
-                }
+                intersection = intersectRay(ray, 1); //treshold 1 cunku tresholdun 1 oldugu nokta image plane 1 den kucuk oldugu noktalardaki kesisimler image planenin arkasinda kalacagindan gorunmeyecekler.
                 
-                
-                
-                if(tmin < 40000){
+                if(intersection.t < INFINITE){
                     parser::Vec3f color = computeColor(ray, intersection, scenePTR->max_recursion_depth, &scene); // just one function for coloring
                     
                     
