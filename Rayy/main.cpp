@@ -405,7 +405,7 @@ parser::Vec3f computeLightContribution(parser::Vec3f point, parser::PointLight l
 
 parser::Vec3f computeDiffuse(int materialID, parser::Vec3f normal, parser::Vec3f normalizedLightDirection, parser::Vec3f irradiance ){
     
-    //double cosTeta = dot(normal, normalizedLightDirection);
+    normal = normalize(normal);
     double cosTheta = fmax(0.0f,  dot(normalizedLightDirection, normal));
     
     
