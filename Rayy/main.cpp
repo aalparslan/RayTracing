@@ -76,6 +76,15 @@ parser::Vec3f normalize(parser::Vec3f v){
     
 }
 
+void freeAll(){
+    
+    delete[]  spheres;
+    delete[]  triangles;
+    delete[]  meshes;
+    delete[] immage;
+    
+}
+
 
 void loadCamera(parser::Camera &x){
     cam.position = x.position;
@@ -309,9 +318,9 @@ IntersectionData  intersectRay(parser::Ray ray, double treshold){
     for(int k = 0; k < numberOfSpheres; k++){
         
         t1 = intersectSphere(ray, spheres[k]);
-
+        
         if(t1 >= treshold){ // BUNU NEDEN 1 diyoruz ya tam anlamadim?? --> treshold intersection pointin nerde
-                            //olacagini belirlerken kullaniliyor. 1 den buyuk oldugu durumda image planin gorunmeyen kismiyla ilgilenmiyoruz demek
+            //olacagini belirlerken kullaniliyor. 1 den buyuk oldugu durumda image planin gorunmeyen kismiyla ilgilenmiyoruz demek
             
             
             if(t1 < tmin){
@@ -510,7 +519,7 @@ int main(int argc, char* argv[])
     parser::Scene scene;
     
     scene.loadFromXml(argv[1]);
-
+    
     // Precompute normal vectors
     precomputeNormalVectors(scene);
     
@@ -520,12 +529,12 @@ int main(int argc, char* argv[])
         loadScene(&scene);
         initImage(&scene);
         
-        for (int i = 0; i < cam.image_width; i++){
-            std::cout << 'X' << std::flush; // Programin hizini intuitive anlamak icin koydum sadece
-            for(int j = 0; j < cam.image_height; j++){
+        for (int i = 0; i < cam.image_height; i++){
+            std::cout <<"% "<<       (i*100)/cam.image_height <<endl<<std::flush; // Programin hizini intuitive anlamak icin koydum sadece
+            for(int j = 0; j < cam.image_width; j++){
                 
                 parser::Ray ray;
-
+                
                 ray = generateRay(i,j);
                 
                 IntersectionData intersection; // The attributes are the same for all three
@@ -549,10 +558,11 @@ int main(int argc, char* argv[])
         // For every camera write another ppm file image.
         write_ppm(cam.image_name.c_str(), immage, cam.image_width, cam.image_height);
     }
-
+    
     // Free memory at the end
     freeNormalVectorMemory();
-
+    freeAll();
+    
     return 0;
     
 }
