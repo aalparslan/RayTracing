@@ -69,6 +69,8 @@ void freeNormalVectorMemory(){
     for(int meshCounter = 0; meshCounter < (*precomputedNormalVectors.meshNormalVectors).size(); meshCounter++){
         delete (*precomputedNormalVectors.meshNormalVectors)[meshCounter];
     }
+    // Free also container of vectors
+    delete precomputedNormalVectors.meshNormalVectors;
 }
 
 double intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
