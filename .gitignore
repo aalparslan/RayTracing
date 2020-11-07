@@ -6,3 +6,6 @@ Rayy.xcodeproj
 *test.ppm
 *.jpg
 *.ppm
+*.gc*
+callgrind*
+*.exe
