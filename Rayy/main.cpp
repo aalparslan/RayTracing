@@ -330,7 +330,7 @@ IntersectionData  intersectRay(parser::Ray ray, double treshold){
                 parser::Vec3f point = add(ray.a, mult(ray.b, tmin)); // find point on the object.
                 
                 parser::Vec3f sphereCenter = vertexData_PTR[spheres[k].center_vertex_id-1];
-                parser::Vec3f normal = add(point, mult(sphereCenter, -1));
+                parser::Vec3f normal = normalize(add(point, mult(sphereCenter, -1)));
                 
                 intersection.materialId = scenePTR->spheres[k].material_id;
                 intersection.normal     = normal;
