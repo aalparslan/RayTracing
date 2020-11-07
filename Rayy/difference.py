@@ -22,3 +22,12 @@ img_pre = imread('bunny_double.ppm')
 diff = abs(img_org - img_pre)
 
 imwrite('difference_bunny_float_double_image.jpg', diff)
+
+
+img_org = imread('bunny.ppm')
+img_pre = imread('bunny_double.ppm')
+
+
+diff = abs(img_org - img_pre)
+
+imwrite('difference_bunny_float_double_image2.jpg', diff)

@@ -10,7 +10,7 @@
 using namespace std;
 
 // Look afeser.hpp for info..
-PrecomputedNormalVectors precomputedNormalVectors;
+PrecomputedVariables precomputedVariables;
 
 typedef struct IntersectionData
 {
@@ -352,7 +352,7 @@ IntersectionData  intersectRay(parser::Ray ray, float treshold){
             
             if(t1 < tmin){
                 intersection.t          = t1;
-                intersection.normal     = (*precomputedNormalVectors.simpleTriangleNormalVectors)[k];
+                intersection.normal     = (*precomputedVariables.simpleTriangleNormalVectors)[k];
                 intersection.materialId = scenePTR->triangles[k].material_id;
                 
                 tmin = t1;
@@ -362,26 +362,19 @@ IntersectionData  intersectRay(parser::Ray ray, float treshold){
     }
     // Intersect meshes
     for(int k = 0; k < scenePTR->meshes.size(); k++){
-        // TODO - OPTIMIATION - alttaki for loop bazen gereksiz donuyor-retrun also the nearest t value!
-        std::vector<float> tAndNormalVector;
+        std::pair<int, float> indexAndValueT;
         
-        tAndNormalVector = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data);
+
+        // Return the index that is closest and t value of the closes face
+        indexAndValueT = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data, tmin, treshold);
         
-        for(int counter = 0; counter < tAndNormalVector.size(); counter++){
-            // Iterate over each face
-            t1 = tAndNormalVector[counter];
+        
+        if(-1 != indexAndValueT.first){
+            intersection.t          = indexAndValueT.second;
+            intersection.normal     = (*(*precomputedVariables.meshNormalVectors)[k])[indexAndValueT.first];
+            intersection.materialId = scenePTR->meshes[k].material_id;
             
-            if(t1 >= treshold){
-                
-                if(t1 < tmin){
-                    intersection.t          = t1;
-                    intersection.normal     = (*(*precomputedNormalVectors.meshNormalVectors)[k])[counter];
-                    intersection.materialId = scenePTR->meshes[k].material_id;
-                    
-                    tmin = t1;
-                    
-                }
-            }
+            tmin = indexAndValueT.second;
         }
     }
     
@@ -521,7 +514,7 @@ int main(int argc, char* argv[])
     scene.loadFromXml(argv[1]);
     
     // Precompute normal vectors
-    precomputeNormalVectors(scene);
+    precomputeAllVariables(scene);
     
     for(auto x = scene.cameras.begin(); x < scene.cameras.end(); x++){
         

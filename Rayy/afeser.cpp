@@ -34,45 +34,64 @@ parser::Vec3f computeNormalVector(const parser::Face &face, const std::vector<pa
     return normal;
 
 }
-void precomputeNormalVectors(const parser::Scene &scene){
-    // Allocate for simple triangles
-    precomputedNormalVectors.simpleTriangleNormalVectors = new std::vector<parser::Vec3f>(scene.triangles.size());
 
-    // Allocate for triangles inside a mesh
-    precomputedNormalVectors.meshNormalVectors = new std::vector<std::vector<parser::Vec3f>*>(scene.meshes.size());
-
-    for(int triangleCounter = 0; triangleCounter < scene.triangles.size(); triangleCounter++){
-        auto &face        = scene.triangles[triangleCounter].indices;
-        auto &vertex_data = scene.vertex_data;
-        
-        (*precomputedNormalVectors.simpleTriangleNormalVectors)[triangleCounter] = computeNormalVector(face, vertex_data);
-    }
-
-    // Precompute for meshes
-    for(int meshCounter = 0; meshCounter < scene.meshes.size(); meshCounter++){
-        // Iterate over triangles in each mesh
-        (*precomputedNormalVectors.meshNormalVectors)[meshCounter] = new std::vector<parser::Vec3f>(scene.meshes[meshCounter].faces.size());
-
-        for(int triangleCounter = 0; triangleCounter < scene.meshes[meshCounter].faces.size(); triangleCounter++){
-            auto &face        = scene.meshes[meshCounter].faces[triangleCounter];
-            auto &vertex_data = scene.vertex_data;
-
-            (*(*precomputedNormalVectors.meshNormalVectors)[meshCounter])[triangleCounter] = computeNormalVector(face, vertex_data);
-        }
-    }
-}
 void freeNormalVectorMemory(){
     // Free triangle vector
-    delete precomputedNormalVectors.simpleTriangleNormalVectors;
+    delete precomputedVariables.simpleTriangleNormalVectors;
     
     // Free mesh vectors
-    for(int meshCounter = 0; meshCounter < (*precomputedNormalVectors.meshNormalVectors).size(); meshCounter++){
-        delete (*precomputedNormalVectors.meshNormalVectors)[meshCounter];
+    for(int meshCounter = 0; meshCounter < (*precomputedVariables.meshNormalVectors).size(); meshCounter++){
+        delete (*precomputedVariables.meshNormalVectors)[meshCounter];
     }
     // Free also container of vectors
-    delete precomputedNormalVectors.meshNormalVectors;
+    delete precomputedVariables.meshNormalVectors;
 }
 
+bool intersectBox(const parser::Ray &ray, const MinimumMaximumPoints &minimumMaximumPoints){
+    /*
+    Computer whether or not a ray intersects a box.
+
+    Inspired from : https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
+    */
+
+    parser::Vec3f minimum = minimumMaximumPoints.minimum;
+    parser::Vec3f maximum = minimumMaximumPoints.maximum;
+
+    float tmin = (minimum.x - ray.a.x) / ray.b.x; 
+    float tmax = (maximum.x - ray.a.x) / ray.b.x; 
+ 
+    if (tmin > tmax) std::swap(tmin, tmax); 
+ 
+    float tymin = (minimum.y - ray.a.y) / ray.b.y; 
+    float tymax = (maximum.y - ray.a.y) / ray.b.y; 
+ 
+    if (tymin > tymax) std::swap(tymin, tymax); 
+ 
+    if ((tmin > tymax) || (tymin > tmax)) 
+        return false; 
+ 
+    if (tymin > tmin) 
+        tmin = tymin; 
+ 
+    if (tymax < tmax) 
+        tmax = tymax; 
+ 
+    float tzmin = (minimum.z - ray.a.z) / ray.b.z; 
+    float tzmax = (maximum.z - ray.a.z) / ray.b.z; 
+ 
+    if (tzmin > tzmax) std::swap(tzmin, tzmax); 
+ 
+    if ((tmin > tzmax) || (tzmin > tmax)) 
+        return false; 
+ 
+    if (tzmin > tmin) 
+        tmin = tzmin; 
+ 
+    if (tzmax < tmax) 
+        tmax = tzmax; 
+ 
+    return true; 
+}
 float intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
     /*
      Return t as float and normal vector as Vec3f.
@@ -153,23 +172,116 @@ float intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::v
 
 
 }
-std::vector<float> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData){
+std::pair<int, float> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData, const float tThreshold, const float naturalThreshold){
     /*
     This function is actually a set of combination for triangles.
     The structure implies there is a vector of faces that specify 3 vertex coordinates.
     
     Given implementation is straightforward, iterate 'intersectTriangle' and return a vector of pairs which include
     t value and surface normal.
+
+    Return only the t value and index after intersection is done. Notice the values greater than tThreshold will not be taken!
     */
-   // Return all normals and t values
-   std::vector<float> allReturns(faces.size());
+   std::pair<int, float> minimumData;
+   minimumData.first  = -1;
+   minimumData.second = tThreshold;
+   
 
    // Do for each triangle...
    for(int counter = 0; counter < faces.size(); counter++){
-       allReturns[counter] = intersectTriangle(ray, faces[counter], vertexData);
+       float t = intersectTriangle(ray, faces[counter], vertexData);
+       if(t >= naturalThreshold){
+           if(t < minimumData.second){
+               minimumData.first  = counter;
+               minimumData.second = t;
+           }
+       }
    }
 
-   return allReturns;
+   
+   return minimumData;
 
 
+}
+
+
+
+/*
+Precompute functions...
+*/
+void precomputeNormalVectors(const parser::Scene &scene){
+    // Allocate for simple triangles
+    precomputedVariables.simpleTriangleNormalVectors = new std::vector<parser::Vec3f>(scene.triangles.size());
+
+    // Allocate for triangles inside a mesh
+    precomputedVariables.meshNormalVectors = new std::vector<std::vector<parser::Vec3f>*>(scene.meshes.size());
+
+    for(int triangleCounter = 0; triangleCounter < scene.triangles.size(); triangleCounter++){
+        auto &face        = scene.triangles[triangleCounter].indices;
+        auto &vertex_data = scene.vertex_data;
+        
+        (*precomputedVariables.simpleTriangleNormalVectors)[triangleCounter] = computeNormalVector(face, vertex_data);
+    }
+
+    // Precompute for meshes
+    for(int meshCounter = 0; meshCounter < scene.meshes.size(); meshCounter++){
+        // Iterate over triangles in each mesh
+        (*precomputedVariables.meshNormalVectors)[meshCounter] = new std::vector<parser::Vec3f>(scene.meshes[meshCounter].faces.size());
+
+        for(int triangleCounter = 0; triangleCounter < scene.meshes[meshCounter].faces.size(); triangleCounter++){
+            auto &face        = scene.meshes[meshCounter].faces[triangleCounter];
+            auto &vertex_data = scene.vertex_data;
+
+            (*(*precomputedVariables.meshNormalVectors)[meshCounter])[triangleCounter] = computeNormalVector(face, vertex_data);
+        }
+    }
+}
+void precomputeMinMaxCoordinates(const parser::Scene &scene){
+    /*
+    Compute minimum and maximum x,y,z coordinates for bounding box
+    for only individual objects.
+    */
+   // TODO - untested
+   precomputedVariables.meshMinMaxPoints = new std::vector<MinimumMaximumPoints>(scene.meshes.size());
+
+   for(int meshCounter = 0; meshCounter < scene.meshes.size(); meshCounter++){
+       // Iterate over faces to find minimum coordinates for each of x, y and z
+       parser::Vec3f minimum, maximum;
+       minimum.x = INFINITY;
+       minimum.y = INFINITY;
+       minimum.z = INFINITY;
+
+       maximum.x = -INFINITY;
+       maximum.y = -INFINITY;
+       maximum.z = -INFINITY;
+
+       for(int faceCounter = 0; faceCounter < scene.meshes[meshCounter].faces.size(); faceCounter++){
+           parser::Face faceVertices = scene.meshes[meshCounter].faces[faceCounter];
+           parser::Vec3f vertices[3];
+
+           vertices[0] = scene.vertex_data[faceVertices.v0_id+1];
+           vertices[1] = scene.vertex_data[faceVertices.v1_id+1];
+           vertices[2] = scene.vertex_data[faceVertices.v2_id+1];
+
+           // Iterate over each vertices
+           for(int vertexCounter = 0; vertexCounter < 3; vertexCounter++){
+               if(minimum.x > vertices[vertexCounter].x) minimum.x = vertices[vertexCounter].x;
+               if(minimum.y > vertices[vertexCounter].y) minimum.y = vertices[vertexCounter].y;
+               if(minimum.z > vertices[vertexCounter].z) minimum.z = vertices[vertexCounter].z;
+
+               if(maximum.x < vertices[vertexCounter].x) maximum.x = vertices[vertexCounter].x;
+               if(maximum.y < vertices[vertexCounter].y) maximum.y = vertices[vertexCounter].y;
+               if(maximum.z < vertices[vertexCounter].z) maximum.z = vertices[vertexCounter].z;
+           }
+           
+       }
+       
+       // Set back
+       (*precomputedVariables.meshMinMaxPoints)[meshCounter].maximum = maximum;
+       (*precomputedVariables.meshMinMaxPoints)[meshCounter].minimum = minimum;
+   }
+}
+void precomputeAllVariables(const parser::Scene &scene){
+    precomputeNormalVectors(scene);
+    precomputeMinMaxCoordinates(scene); // Bounding box
 }
