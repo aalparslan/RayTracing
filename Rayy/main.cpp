@@ -5,12 +5,14 @@
 #include <math.h>
 #include "helper.hpp" // Other includes...
 #include "afeser.hpp" // Functions
+#include <thread>
 
 #define INFINITE 40000
 using namespace std;
 
 // Look afeser.hpp for info..
 PrecomputedVariables precomputedVariables;
+const int numberOfCores = thread::hardware_concurrency();
 
 typedef struct IntersectionData
 {
@@ -364,7 +366,7 @@ IntersectionData  intersectRay(parser::Ray ray, float treshold){
     for(int k = 0; k < scenePTR->meshes.size(); k++){
         std::pair<int, float> indexAndValueT;
         
-
+        
         // Return the index that is closest and t value of the closes face
         indexAndValueT = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data, tmin, treshold, k);
         
@@ -504,6 +506,36 @@ parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int 
 }
 
 
+void processImage(parser::Camera cam, parser::Scene *scene, int image_width, int finishHeight, int startingHeight){
+    
+    for (int i = startingHeight; i < finishHeight; i++){
+        std::cout <<"% "<<       ((i -startingHeight)*100)/(finishHeight -startingHeight) <<endl<<std::flush; // Programin hizini intuitive anlamak icin koydum sadece
+        for(int j = 0; j < cam.image_width; j++){
+            
+            parser::Ray ray;
+            
+            ray = generateRay(i,j);
+            
+            IntersectionData intersection; // The attributes are the same for all three
+            intersection = intersectRay(ray, 1); //treshold 1 cunku tresholdun 1 oldugu nokta image plane 1 den kucuk oldugu noktalardaki kesisimler image planenin arkasinda kalacagindan gorunmeyecekler.
+            
+            if(intersection.t < INFINITE){
+                parser::Vec3f color = computeColor(ray, intersection, scenePTR->max_recursion_depth, scene); // just one function for coloring
+                
+                
+                int wherePixelStarts = i*(cam.image_width)*3 + j*3;
+                
+                
+                immage[wherePixelStarts]    = (unsigned char) color.x;
+                immage[wherePixelStarts + 1] = (unsigned char) color.y;
+                immage[wherePixelStarts + 2] = (unsigned char) color.z;
+            }
+        }
+    }
+    
+}
+
+
 
 
 int main(int argc, char* argv[])
@@ -522,29 +554,30 @@ int main(int argc, char* argv[])
         loadScene(&scene);
         initImage(&scene);
         
-        for (int i = 0; i < cam.image_height; i++){
-            std::cout <<"% "<<       (i*100)/cam.image_height <<endl<<std::flush; // Programin hizini intuitive anlamak icin koydum sadece
-            for(int j = 0; j < cam.image_width; j++){
+        const int width = (*x).image_width;
+        const int height = (*x).image_height;
+        if(numberOfCores == 0 || height < numberOfCores){
+            processImage( (*x),  &scene, width , height, 0);
+        }else{
+            thread* threads = new thread[numberOfCores];
+            const int heightIncrease = height/numberOfCores;
+            
+            for(int i = 0; i < numberOfCores; i++){
+                const int min_height = i*heightIncrease;
                 
-                parser::Ray ray;
-                
-                ray = generateRay(i,j);
-                
-                IntersectionData intersection; // The attributes are the same for all three
-                intersection = intersectRay(ray, 1); //treshold 1 cunku tresholdun 1 oldugu nokta image plane 1 den kucuk oldugu noktalardaki kesisimler image planenin arkasinda kalacagindan gorunmeyecekler.
-                
-                if(intersection.t < INFINITE){
-                    parser::Vec3f color = computeColor(ray, intersection, scenePTR->max_recursion_depth, &scene); // just one function for coloring
-                    
-                    
-                    int wherePixelStarts = i*(cam.image_width)*3 + j*3;
-                    
-                    
-                    immage[wherePixelStarts]    = (unsigned char) color.x;
-                    immage[wherePixelStarts + 1] = (unsigned char) color.y;
-                    immage[wherePixelStarts + 2] = (unsigned char) color.z;
+                if(i+1 != numberOfCores){
+                    const int max_height = (i+1)*heightIncrease;
+                    threads[i] = thread(processImage, (*x), &scene, width, max_height, min_height);
+                }else{
+                    const int max_height = height;
+                    threads[i] = thread(processImage, (*x), &scene, width, max_height, min_height);
                 }
             }
+            
+            for(int i =0; i < numberOfCores; i++){
+                threads[i].join();
+            }
+            delete[] threads;
         }
         
         
