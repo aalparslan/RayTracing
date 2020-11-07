@@ -45,6 +45,9 @@ void freeNormalVectorMemory(){
     }
     // Free also container of vectors
     delete precomputedVariables.meshNormalVectors;
+
+    // Do not forget the min/max coordinates
+    delete precomputedVariables.meshMinMaxPoints;
 }
 
 bool intersectBox(const parser::Ray &ray, const MinimumMaximumPoints &minimumMaximumPoints){
@@ -259,9 +262,9 @@ void precomputeMinMaxCoordinates(const parser::Scene &scene){
            parser::Face faceVertices = scene.meshes[meshCounter].faces[faceCounter];
            parser::Vec3f vertices[3];
 
-           vertices[0] = scene.vertex_data[faceVertices.v0_id+1];
-           vertices[1] = scene.vertex_data[faceVertices.v1_id+1];
-           vertices[2] = scene.vertex_data[faceVertices.v2_id+1];
+           vertices[0] = scene.vertex_data[faceVertices.v0_id-1];
+           vertices[1] = scene.vertex_data[faceVertices.v1_id-1];
+           vertices[2] = scene.vertex_data[faceVertices.v2_id-1];
 
            // Iterate over each vertices
            for(int vertexCounter = 0; vertexCounter < 3; vertexCounter++){
