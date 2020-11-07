@@ -37,8 +37,8 @@ parser::Mesh  *meshes;
 parser::Camera cam;
 parser::Vec3f camUVector;
 //int sizeX, sizeY;
-double pixelW, pixelH;
-double halfPixelW, halfPixelH;
+float pixelW, pixelH;
+float halfPixelW, halfPixelH;
 
 
 
@@ -56,7 +56,7 @@ parser::Vec3f cross1(parser::Vec3f a, parser::Vec3f b){
     
 }
 
-double lengTh(parser::Vec3f v){
+float lengTh(parser::Vec3f v){
     
     return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }
@@ -64,7 +64,7 @@ double lengTh(parser::Vec3f v){
 parser::Vec3f normalize(parser::Vec3f v){
     
     parser::Vec3f tmp;
-    double d;
+    float d;
     
     d = lengTh(v);
     tmp.x = v.x/d;
@@ -96,10 +96,10 @@ void loadCamera(parser::Camera &x){
     cam.image_height = x.image_height;
     cam.image_name = x.image_name;
     
-    pixelW = (cam.near_plane.y - cam.near_plane.x)/ (double) cam.image_width;
+    pixelW = (cam.near_plane.y - cam.near_plane.x)/ (float) cam.image_width;
     halfPixelW = pixelW * 0.5;
     
-    pixelH = (cam.near_plane.w - cam.near_plane.z) / (double) cam.image_height;
+    pixelH = (cam.near_plane.w - cam.near_plane.z) / (float) cam.image_height;
     halfPixelH = pixelH * 0.5;
     
     camUVector = cross1(cam.gaze, cam.up);
@@ -154,7 +154,7 @@ void loadScene(parser::Scene * scene){
     
 }
 
-parser::Vec3f mult(parser::Vec3f a, double c){
+parser::Vec3f mult(parser::Vec3f a, float c){
     
     parser::Vec3f tmp;
     
@@ -199,7 +199,7 @@ parser::Ray generateRay(int i, int j){
     parser::Vec3f m;
     parser::Vec3f q;
     parser::Vec3f result;
-    double su, sv;
+    float su, sv;
     
     m = add(cam.position, mult(cam.gaze, cam.near_distance));
     q = add(m, add(mult(camUVector,cam.near_plane.x ), mult(cam.up,cam.near_plane.w) ));
@@ -223,18 +223,18 @@ parser::Ray generateRay(int i, int j){
     
 }
 
-double intersectSphere(parser::Ray ray, parser::Sphere sphere){ // TODO - neden double bu?? struct yapilari float??
+float intersectSphere(parser::Ray ray, parser::Sphere sphere){ // TODO - neden float bu?? struct yapilari float??
     
-    double A, B, C;  // ---> qudritic func constants
+    float A, B, C;  // ---> qudritic func constants
     
-    double delta;
+    float delta;
     
     parser::Vec3f scenter = vertexData_PTR[sphere.center_vertex_id -1];
     
-    double sradius = sphere.radius;
+    float sradius = sphere.radius;
     
     
-    double t, t1, t2;
+    float t, t1, t2;
     
     C = (ray.a.x-scenter.x)*(ray.a.x-scenter.x) + (ray.a.y-scenter.y)*(ray.a.y-scenter.y) + (ray.a.z-scenter.z)*(ray.a.z-scenter.z) -sradius*sradius;
     
@@ -251,7 +251,7 @@ double intersectSphere(parser::Ray ray, parser::Sphere sphere){ // TODO - neden 
         t = -B / (2*A);
     }else{
         
-        double tmp;
+        float tmp;
         
         delta = sqrt(delta);
         A = 2*A;
@@ -307,13 +307,13 @@ parser::Vec3f subtract(parser::Vec3f a, parser::Vec3f b){
 }
 
 
-IntersectionData  intersectRay(parser::Ray ray, double treshold){
+IntersectionData  intersectRay(parser::Ray ray, float treshold){
     
     
-    double tmin = INFINITE;
+    float tmin = INFINITE;
     
     IntersectionData intersection; // The attributes are the same for all three
-    double t1; // To find minimum
+    float t1; // To find minimum
     
     for(int k = 0; k < numberOfSpheres; k++){
         
@@ -362,8 +362,8 @@ IntersectionData  intersectRay(parser::Ray ray, double treshold){
     }
     // Intersect meshes
     for(int k = 0; k < scenePTR->meshes.size(); k++){
-        
-        std::vector<double> tAndNormalVector;
+        // TODO - OPTIMIATION - alttaki for loop bazen gereksiz donuyor-retrun also the nearest t value!
+        std::vector<float> tAndNormalVector;
         
         tAndNormalVector = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data);
         
@@ -397,7 +397,7 @@ parser::Vec3f computeLightContribution(parser::Vec3f point, parser::PointLight l
     //E(d) == I / d^2
     
     parser::Vec3f lightDirection = subtract(light.position, point);
-    double lightDistance = lengTh(lightDirection);
+    float lightDistance = lengTh(lightDirection);
     parser::Vec3f irradianceContribution = vectorDivision(light.intensity, lightDistance * lightDistance);
     return irradianceContribution;
     
@@ -406,7 +406,7 @@ parser::Vec3f computeLightContribution(parser::Vec3f point, parser::PointLight l
 parser::Vec3f computeDiffuse(int materialID, parser::Vec3f normal, parser::Vec3f normalizedLightDirection, parser::Vec3f irradiance ){
     
     normal = normalize(normal);
-    double cosTheta = fmax(0.0f,  dot(normalizedLightDirection, normal));
+    float cosTheta = fmax(0.0f,  dot(normalizedLightDirection, normal));
     
     
     parser::Vec3f diffuse = vectorMultiplication(irradiance, cosTheta);
@@ -461,7 +461,7 @@ parser::Vec3f computeColor( parser::Ray ray, IntersectionData intersection, int 
         parser::Vec3f intOffset = mult(normalizedLightDirection, scenePTR->shadow_ray_epsilon);
         shadowRay.a = add(point, intOffset);
         shadowRay.b = normalizedLightDirection;
-        double shadowIntersection = intersectRay(shadowRay, 0).t; //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
+        float shadowIntersection = intersectRay(shadowRay, 0).t; //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
         
         if(shadowIntersection >= lengTh(lightDirection)){
             

@@ -23,13 +23,13 @@ extern PrecomputedNormalVectors precomputedNormalVectors;
 void precomputeNormalVectors(const parser::Scene &scene); // Precompute the data structure above
 void freeNormalVectorMemory(); // Free memory at the end
 
-double  intersectTriangle(
+float  intersectTriangle(
     const parser::Ray &ray, 
     const parser::Face &face,
     std::vector<parser::Vec3f> &vertexData
 );
 
-std::vector<double>  intersectMesh(
+std::vector<float>  intersectMesh(
     const parser::Ray &ray,
     const std::vector<parser::Face> &faces,
     std::vector<parser::Vec3f> &vertexData

@@ -1,6 +1,6 @@
 #include "helper.hpp"
 
-double dot(parser::Vec3f a, parser::Vec3f b){
+float dot(parser::Vec3f a, parser::Vec3f b){
     /*
     Calculate dot product of a and b.
     */
@@ -12,20 +12,20 @@ parser::Vec3f vectorDifference(parser::Vec3f a, parser::Vec3f b){
     */
    return parser::Vec3f{a.x - b.x, a.y - b.y, a.z - b.z};
 }
-double vectorLength(parser::Vec3f v){
+float vectorLength(parser::Vec3f v){
     /*
     Calculate vector length.
     */
     return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 }
-parser::Vec3f vectorDivision(parser::Vec3f v, double div){
+parser::Vec3f vectorDivision(parser::Vec3f v, float div){
     v.x = v.x / div;
     v.y = v.y / div;
     v.z = v.z / div;
     
     return v;
 }
-parser::Vec3f vectorMultiplication(parser::Vec3f v, double mul){
+parser::Vec3f vectorMultiplication(parser::Vec3f v, float mul){
     v.x = v.x * mul;
     v.y = v.y * mul;
     v.z = v.z * mul;

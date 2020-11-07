@@ -5,17 +5,17 @@
 parser::Vec3f computeNormalVector(const parser::Face &face, const std::vector<parser::Vec3f> &vertex_data){
     // Triangle constants...
     // Notice the indices start from 1, so decrement is needed
-    double x_a = vertex_data[face.v0_id-1].x;
-    double y_a = vertex_data[face.v0_id-1].y;
-    double z_a = vertex_data[face.v0_id-1].z;
+    float x_a = vertex_data[face.v0_id-1].x;
+    float y_a = vertex_data[face.v0_id-1].y;
+    float z_a = vertex_data[face.v0_id-1].z;
 
-    double x_b = vertex_data[face.v1_id-1].x;
-    double y_b = vertex_data[face.v1_id-1].y;
-    double z_b = vertex_data[face.v1_id-1].z;
+    float x_b = vertex_data[face.v1_id-1].x;
+    float y_b = vertex_data[face.v1_id-1].y;
+    float z_b = vertex_data[face.v1_id-1].z;
 
-    double x_c = vertex_data[face.v2_id-1].x;
-    double y_c = vertex_data[face.v2_id-1].y;
-    double z_c = vertex_data[face.v2_id-1].z;
+    float x_c = vertex_data[face.v2_id-1].x;
+    float y_c = vertex_data[face.v2_id-1].y;
+    float z_c = vertex_data[face.v2_id-1].z;
     // Calculate the edge vectors
     // Direction is from second vertex to first and third
     parser::Vec3f edge1, edge2, normal;
@@ -73,65 +73,65 @@ void freeNormalVectorMemory(){
     delete precomputedNormalVectors.meshNormalVectors;
 }
 
-double intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
+float intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::vector<parser::Vec3f> &vertexData){
     /*
-     Return t as double and normal vector as Vec3f.
+     Return t as float and normal vector as Vec3f.
      t = -1 if no intersection exists.
 
      (Snyder & Barr, 1987) method
      Textbook Page 78 notation used
      */
     // Ray constants...
-    double x_e = ray.a.x;
-    double y_e = ray.a.y;
-    double z_e = ray.a.z;
+    float x_e = ray.a.x;
+    float y_e = ray.a.y;
+    float z_e = ray.a.z;
 
-    double x_d = ray.b.x;
-    double y_d = ray.b.y;
-    double z_d = ray.b.z;
+    float x_d = ray.b.x;
+    float y_d = ray.b.y;
+    float z_d = ray.b.z;
 
     // Triangle constants...
     // Notice the indices start from 1, so decrement is needed
-    double x_a = vertexData[face.v0_id-1].x;
-    double y_a = vertexData[face.v0_id-1].y;
-    double z_a = vertexData[face.v0_id-1].z;
+    float x_a = vertexData[face.v0_id-1].x;
+    float y_a = vertexData[face.v0_id-1].y;
+    float z_a = vertexData[face.v0_id-1].z;
 
-    double x_b = vertexData[face.v1_id-1].x;
-    double y_b = vertexData[face.v1_id-1].y;
-    double z_b = vertexData[face.v1_id-1].z;
+    float x_b = vertexData[face.v1_id-1].x;
+    float y_b = vertexData[face.v1_id-1].y;
+    float z_b = vertexData[face.v1_id-1].z;
 
-    double x_c = vertexData[face.v2_id-1].x;
-    double y_c = vertexData[face.v2_id-1].y;
-    double z_c = vertexData[face.v2_id-1].z;
+    float x_c = vertexData[face.v2_id-1].x;
+    float y_c = vertexData[face.v2_id-1].y;
+    float z_c = vertexData[face.v2_id-1].z;
 
 
     // Matrix elements...  
-    double a = x_a - x_b;
-    double b = y_a - y_b;
-    double c = z_a - z_b;
+    float a = x_a - x_b;
+    float b = y_a - y_b;
+    float c = z_a - z_b;
     
-    double d = x_a - x_c;
-    double e = y_a - y_c;
-    double f = z_a - z_c;
+    float d = x_a - x_c;
+    float e = y_a - y_c;
+    float f = z_a - z_c;
 
-    double g = x_d;
-    double h = y_d;
-    double i = z_d;
+    float g = x_d;
+    float h = y_d;
+    float i = z_d;
 
     // Solution variables...
-    double j = x_a - x_e;
-    double k = y_a - y_e;
-    double l = z_a - z_e;
+    float j = x_a - x_e;
+    float k = y_a - y_e;
+    float l = z_a - z_e;
 
 
     // Composite variables...
-    double M = a*(e*i - h*f) + b*(g*f - d*i) + c*(d*h - e*g);
+    float M = a*(e*i - h*f) + b*(g*f - d*i) + c*(d*h - e*g);
 
 
     // Main variables
-    double beta  = j*(e*i - h*f) + k*(g*f - d*i) + l*(d*h - e*g);
-    double gamma = i*(a*k - j*b) + h*(j*c - a*l) + g*(b*l - k*c);
-    double t     = f*(a*k - j*b) + e*(j*c - a*l) + d*(b*l - k*c);
+    float beta  = j*(e*i - h*f) + k*(g*f - d*i) + l*(d*h - e*g);
+    float gamma = i*(a*k - j*b) + h*(j*c - a*l) + g*(b*l - k*c);
+    float t     = f*(a*k - j*b) + e*(j*c - a*l) + d*(b*l - k*c);
 
     // Normalization...
     beta  = beta  / M;
@@ -153,7 +153,7 @@ double intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::
 
 
 }
-std::vector<double> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData){
+std::vector<float> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData){
     /*
     This function is actually a set of combination for triangles.
     The structure implies there is a vector of faces that specify 3 vertex coordinates.
@@ -162,7 +162,7 @@ std::vector<double> intersectMesh(const parser::Ray &ray, const std::vector<pars
     t value and surface normal.
     */
    // Return all normals and t values
-   std::vector<double> allReturns(faces.size());
+   std::vector<float> allReturns(faces.size());
 
    // Do for each triangle...
    for(int counter = 0; counter < faces.size(); counter++){
