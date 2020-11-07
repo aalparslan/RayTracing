@@ -366,7 +366,7 @@ IntersectionData  intersectRay(parser::Ray ray, float treshold){
         
 
         // Return the index that is closest and t value of the closes face
-        indexAndValueT = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data, tmin, treshold);
+        indexAndValueT = intersectMesh(ray, scenePTR->meshes[k].faces, scenePTR->vertex_data, tmin, treshold, k);
         
         
         if(-1 != indexAndValueT.first){

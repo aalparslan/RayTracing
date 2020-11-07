@@ -175,7 +175,7 @@ float intersectTriangle(const parser::Ray &ray, const parser::Face &face, std::v
 
 
 }
-std::pair<int, float> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData, const float tThreshold, const float naturalThreshold){
+std::pair<int, float> intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, std::vector<parser::Vec3f> &vertexData, const float tThreshold, const float naturalThreshold, const int meshIndex){
     /*
     This function is actually a set of combination for triangles.
     The structure implies there is a vector of faces that specify 3 vertex coordinates.
@@ -189,6 +189,9 @@ std::pair<int, float> intersectMesh(const parser::Ray &ray, const std::vector<pa
    minimumData.first  = -1;
    minimumData.second = tThreshold;
    
+   if (!intersectBox(ray, (*precomputedVariables.meshMinMaxPoints)[meshIndex])){
+       return minimumData;
+   }
 
    // Do for each triangle...
    for(int counter = 0; counter < faces.size(); counter++){
