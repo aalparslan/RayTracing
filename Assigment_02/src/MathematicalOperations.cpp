@@ -2,6 +2,14 @@
 #include "parser.hpp"
 #include "MathematicalOperations.hpp"
 
+parser::Vec3f MatOp::vectorSubtraction(parser::Vec3f a, parser::Vec3f b){
+    
+    a.x -= b.x;
+    a.y -= b.y;
+    a.z -= b.z;
+    
+    return a;
+}
 float MatOp::dot(parser::Vec3f a, parser::Vec3f b){
     /*
     Calculate dot product of a and b.
