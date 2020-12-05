@@ -8,5 +8,5 @@ all:
 		src/main.cpp \
 		-o raytracer \
 		-std=c++11 \
-		-lgcov -pthread \
+		-pthread \
 		-O3 -g
