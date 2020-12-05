@@ -7,7 +7,7 @@
 #include "MathematicalOperations.hpp"
 #include <thread>
 #include "IntersectionCalculator.hpp"
-
+#include "Transformator.hpp"
 #include "ColorCalculator.hpp"
 
 
@@ -20,15 +20,6 @@ using namespace std::chrono;
 
 
 const int numberOfCores = thread::hardware_concurrency();
-
-
-//int sizeX, sizeY;
-
-
-
-
-
-
 
 
 
@@ -151,9 +142,26 @@ int main(int argc, char* argv[])
     
     scene.loadFromXml(argv[1]);
     
+
+
+    /*
+     * Model transformations here
+     * Notice model transformations are applied only
+     * once; hence, all cameras will see the same
+     * transformed system.
+     */
+    // Apply to triangles
+    std::cout << scene.vertex_data[scene.triangles[0].indices.v0_id].x << std::endl;
+    SceneTransformations::applyTriangleModelTransformations(scene);
+    std::cout << scene.vertex_data[scene.triangles[0].indices.v0_id].x << std::endl;
+
+    // TODO - SPHERES! -> texture ile ic ice olcak bu!
+    
+
+    // Create variables AFTER object transformation is done for the scene
     IntersectionCalculator ic(scene);
     ColorCalculator cc(&scene);
-    
+
     for(auto x = scene.cameras.begin(); x < scene.cameras.end(); x++){
         
         

@@ -4,6 +4,23 @@
 #include <iostream>
 #include "parser.hpp"
 
+class SceneTransformations{
+    /*
+     * This is a static class and aim is to remove burden on main.cpp
+     * Call the methods directly, this will handle Transformator.
+     * 
+     * WARNING: THIS WILL CHANGE THE SCENE DATA!!!
+     */
+
+    public:
+    static void applyTriangleModelTransformations(parser::Scene &scene);
+
+    private:
+    static std::vector<std::pair<char, char>> parseString(std::string str);
+    static void decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices);
+};
+
+
 class Transformator{
     /*
      * The class is designed for lazy evaluation.

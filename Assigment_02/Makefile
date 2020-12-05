@@ -11,4 +11,4 @@ all:
 		-o raytracer \
 		-std=c++11 \
 		-pthread \
-		-O3 -g
+		-g
