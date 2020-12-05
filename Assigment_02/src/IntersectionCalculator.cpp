@@ -1,4 +1,5 @@
 #include "IntersectionCalculator.hpp"
+#include "MathematicalOperations.hpp"
 #include "helper.hpp"
 #include "parser.hpp"
 #include <iostream>
@@ -88,10 +89,10 @@ IntersectionCalculator::IntersectionData IntersectionCalculator::intersectRay(pa
                 tmin =t1;
                 
                 
-                parser::Vec3f point = vectorAddition(ray.a, vectorMultiplication(ray.b, tmin)); // find point on the object.
+                parser::Vec3f point = MatOp::vectorAddition(ray.a, MatOp::vectorMultiplication(ray.b, tmin)); // find point on the object.
                 
                 parser::Vec3f sphereCenter = scene.vertex_data[spheres[k].center_vertex_id-1];
-                parser::Vec3f normal = vectorNormalize(vectorAddition(point, vectorMultiplication(sphereCenter, -1)));
+                parser::Vec3f normal = MatOp::vectorNormalize(MatOp::vectorAddition(point, MatOp::vectorMultiplication(sphereCenter, -1)));
                 
                 intersection.materialId = scene.spheres[k].material_id;
                 intersection.normal     = normal;
@@ -173,7 +174,7 @@ parser::Vec3f IntersectionCalculator::computeNormalVector(const parser::Face &fa
     edge2.z = z_c - z_b;
     
     
-    normal = vectorNormalize(vectorCrossProduct(edge2, edge1));
+    normal = MatOp::vectorNormalize(MatOp::vectorCrossProduct(edge2, edge1));
 
     return normal;
 

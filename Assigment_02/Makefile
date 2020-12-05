@@ -1,7 +1,7 @@
 all:
 	g++ -I ./src \
 		src/IntersectionCalculator.cpp \
-		src/helper.cpp \
+		src/MathematicalOperations.cpp \
 		src/parser.cpp \
 		src/ppm.cpp \
 		src/tinyxml2.cpp \

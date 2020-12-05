@@ -2,7 +2,6 @@
 #ifndef _INTERSECTIONCALCULATOR
 #define _INTERSECTIONCALCULATOR
 
-#include "helper.hpp"
 #include "parser.hpp"
 
 class IntersectionCalculator{
@@ -22,7 +21,11 @@ class IntersectionCalculator{
     } IntersectionData;
     IntersectionData intersectRay(parser::Ray ray, float treshold) const;
 
-    float intersectSphere(parser::Ray ray, parser::Sphere sphere) const;
+    
+
+    private:
+    // Main functions
+        float intersectSphere(parser::Ray ray, parser::Sphere sphere) const;
     
     float intersectTriangle(
         const parser::Ray &ray, 
@@ -37,9 +40,8 @@ class IntersectionCalculator{
         const float naturalThreshold,           // Threshold to determine if a vertex intersection is really an intersection in 3D world(-1 output etc.)
         const int meshIndex                     // Index of the mesh for precomputed variables
     ) const;
-    
 
-    private:
+
     // Fiels
         const parser::Scene scene;
     // Precomputation

@@ -3,7 +3,8 @@
 #include "parser.hpp"
 #include "ppm.hpp"
 #include <math.h>
-#include "helper.hpp" // Other includes...
+
+#include "MathematicalOperations.hpp"
 #include <thread>
 #include "IntersectionCalculator.hpp"
 
@@ -256,7 +257,7 @@ parser::Vec3f computeLightContribution(parser::Vec3f point, parser::PointLight l
     
     parser::Vec3f lightDirection = subtract(light.position, point);
     float lightDistance = lengTh(lightDirection);
-    parser::Vec3f irradianceContribution = vectorDivision(light.intensity, lightDistance * lightDistance);
+    parser::Vec3f irradianceContribution = MatOp::vectorDivision(light.intensity, lightDistance * lightDistance);
     return irradianceContribution;
     
 }
@@ -264,10 +265,10 @@ parser::Vec3f computeLightContribution(parser::Vec3f point, parser::PointLight l
 parser::Vec3f computeDiffuse(int materialID, parser::Vec3f normal, parser::Vec3f normalizedLightDirection, parser::Vec3f irradiance ){
     
     normal = normalize(normal);
-    float cosTheta = fmax(0.0f,  dot(normalizedLightDirection, normal));
+    float cosTheta = fmax(0.0f,  MatOp::dot(normalizedLightDirection, normal));
     
     
-    parser::Vec3f diffuse = vectorMultiplication(irradiance, cosTheta);
+    parser::Vec3f diffuse = MatOp::vectorMultiplication(irradiance, cosTheta);
     parser::Vec3f diffuseReflectance = getDiffuseReflectance(materialID);
     // Multiplying with kd
     diffuse.x *= diffuseReflectance.x;
@@ -281,9 +282,9 @@ parser::Vec3f computeDiffuse(int materialID, parser::Vec3f normal, parser::Vec3f
 parser::Vec3f computeSpecular(int materialID, parser::Vec3f normal, parser::Vec3f irradiance, parser::Vec3f normalizedHalfVector ){
     
     float phongEx = scenePTR->materials[materialID-1].phong_exponent;
-    float phongExponentCosAlpha =  pow(max(0.0f,(float) dot(normalize(normal), normalizedHalfVector)), phongEx );
+    float phongExponentCosAlpha =  pow(max(0.0f,(float) MatOp::dot(normalize(normal), normalizedHalfVector)), phongEx );
     // (cosAlpha)^ns * E(d)
-    parser::Vec3f specular = vectorMultiplication(irradiance, phongExponentCosAlpha);
+    parser::Vec3f specular = MatOp::vectorMultiplication(irradiance, phongExponentCosAlpha);
     parser::Vec3f specularReflectance = getspecularReflectance(materialID);
     
     // Multiplying with specular coeff
@@ -327,12 +328,12 @@ parser::Vec3f computeColor(parser::Ray ray, IntersectionCalculator::Intersection
             parser::Vec3f irradiance = computeLightContribution(point, (*y));
             parser::Vec3f diffuseContribution = computeDiffuse(materialID,  intersection.normal, normalizedLightDirection, irradiance );
             
-            pixelColor = vectorAddition(diffuseContribution, pixelColor); // add diffuse contribution to the pixel color
+            pixelColor = MatOp::vectorAddition(diffuseContribution, pixelColor); // add diffuse contribution to the pixel color
             
             // compute specular contribution
-            parser::Vec3f normalizedHalfVector = normalize(vectorAddition(normalizedLightDirection, normalizedEyeVector));
+            parser::Vec3f normalizedHalfVector = normalize(MatOp::vectorAddition(normalizedLightDirection, normalizedEyeVector));
             parser::Vec3f specularContribution = computeSpecular(materialID, intersection.normal, irradiance, normalizedHalfVector );
-            pixelColor = vectorAddition(specularContribution, pixelColor); // add specular contribution to the pixel color
+            pixelColor = MatOp::vectorAddition(specularContribution, pixelColor); // add specular contribution to the pixel color
         }
         else{
             
@@ -346,7 +347,7 @@ parser::Vec3f computeColor(parser::Ray ray, IntersectionCalculator::Intersection
     if(recursionNumber > 0 && (mirrorComponenet.x > 0 || mirrorComponenet.y > 0 || mirrorComponenet.z > 0)){
         
         parser::Ray reflectedRay;
-        float cosTheta = dot(intersection.normal, normalizedEyeVector);
+        float cosTheta = MatOp::dot(intersection.normal, normalizedEyeVector);
         reflectedRay.b = add(mult(normalizedEyeVector, -1), mult(intersection.normal, 2*cosTheta));
         reflectedRay.a = add(point ,mult(reflectedRay.b, scenePTR->shadow_ray_epsilon) );
         IntersectionCalculator::IntersectionData reflectedIntersection = ic.intersectRay(reflectedRay,0); //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
@@ -457,7 +458,7 @@ int main(int argc, char* argv[])
     // Print time passed
     auto duration = duration_cast<microseconds>(high_resolution_clock::now() - start); 
   
-    std::cout << "Time passed : " << duration.count() << std::endl;
+    std::cout << "Time passed : " << duration.count() / 1000 / 1000 << std::endl;
     
     return 0;
     

@@ -1,6 +1,6 @@
-#include "helper.hpp"
+
 #include "parser.hpp"
-#include "MathematicalOperations.cpp"
+#include "MathematicalOperations.hpp"
 
 float MatOp::dot(parser::Vec3f a, parser::Vec3f b){
     /*
