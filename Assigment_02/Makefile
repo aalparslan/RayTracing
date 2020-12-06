@@ -12,3 +12,15 @@ all:
 		-std=c++11 \
 		-pthread \
 		-g
+
+
+transformator_tester:
+	g++ -I ./src \
+		src/Transformator.cpp \
+		src/TransformatorTester.cpp \
+		src/MathematicalOperations.cpp \
+		src/parser.cpp \
+		src/tinyxml2.cpp \
+		-o transformator_tester \
+		-std=c++11 \
+		-g

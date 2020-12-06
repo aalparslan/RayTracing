@@ -1,92 +1,23 @@
 #include <iostream>
 #include "parser.hpp"
 #include "Transformator.hpp"
+#include "MathematicalOperations.hpp"
 #include <stdexcept>
 #include <bits/stdc++.h>
+#include <cmath>
+#include <stdio.h>
 
+// Init 4x4 matrix
+Transformator::Transformator() :
+    floating_precision(0.001)
+    {
+    // Init transformation matrix
+    this->transformation_matrix = createMatrix(4, 4);
 
-void SceneTransformations::applyTriangleModelTransformations(parser::Scene &scene){
-    for(int triangle_index = 0; triangle_index < scene.triangles.size(); triangle_index++){
-        std::string transformations = scene.triangles[triangle_index].transformations;
-
-        // Find the transformation
-        std::vector<std::pair<char, char>> op_codes = parseString(transformations);
-
-        // Calculate the vertices
-        std::vector<parser::Vec3f> triangle_vertices;
-        triangle_vertices.push_back(scene.vertex_data[scene.triangles[triangle_index].indices.v0_id-1]);
-        triangle_vertices.push_back(scene.vertex_data[scene.triangles[triangle_index].indices.v1_id-1]);
-        triangle_vertices.push_back(scene.vertex_data[scene.triangles[triangle_index].indices.v2_id-1]);
-
-
-        // Apply it!
-        // std::cout << triangle_vertices[0].x << std::endl;
-        decideDoOperation(op_codes, scene, triangle_vertices);
-        // std::cout << triangle_vertices[0].x << std::endl;
-
-        // Add new vertices to the end and fix the points
-        scene.vertex_data.push_back(triangle_vertices[0]);
-        scene.triangles[triangle_index].indices.v0_id = scene.vertex_data.size();
-        scene.vertex_data.push_back(triangle_vertices[1]);
-        scene.triangles[triangle_index].indices.v1_id = scene.vertex_data.size();
-        scene.vertex_data.push_back(triangle_vertices[2]);
-        scene.triangles[triangle_index].indices.v2_id = scene.vertex_data.size();
-
-    }
-}
-std::vector<std::pair<char, char>> SceneTransformations::parseString(std::string str){
-    std::istringstream stream(str);
-
-    std::vector<std::pair<char, char>> all_codes;
-
-
-    std::string code;
-    while(stream >> code){
-        all_codes.push_back(std::pair<char, char>(code[0], code[1]));
-    }
-
-    return all_codes;
-}
-void SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices){
-    if(operation_codes.size() == 0){
-        return;
-    }
-    
-    Transformator t;
-
-    for(int operation_num = 0; operation_num < operation_codes.size(); operation_num++){
-        
-        int transformation_index = operation_codes[operation_num].second - '0';
-        // Be sure indexes start with 1!
-        transformation_index = transformation_index - 1;
-
-        switch(operation_codes[operation_num].first){
-            case 's':
-                // TODO - scale
-                break;
-
-            case 'r':
-                // TODO - rotate
-                break;
-
-            case 't':
-                // TODO - xyz ekseninde bir sikinti var
-                t.translate(scene.translations[transformation_index]);
-                break;
-            
-            default:
-                throw std::invalid_argument("Can't decide transformation operation, possibly parsing failed...");
-        }
-
-    }
-
-    // After the transformation matrix is created
-    // Simply calculate the result and write back!
-    std::vector<parser::Vec3f> new_coords = t.transformPoints(target_vertices);
-
-    for(int vertex_index = 0; vertex_index < target_vertices.size(); vertex_index++){
-        target_vertices[vertex_index] = new_coords[vertex_index];
-    }
+    transformation_matrix[0][0] = 1;
+    transformation_matrix[1][1] = 1;
+    transformation_matrix[2][2] = 1;
+    transformation_matrix[3][3] = 1;
 }
 
 
@@ -158,9 +89,9 @@ std::vector<parser::Vec3f> Transformator::transformPoints(const std::vector<pars
     // 3)
     std::vector<parser::Vec3f> transformed_points(input_matrix[0].size());
     for(int column = 0; column < input_matrix[0].size(); column++){
-        transformed_points[column].x = input_matrix[column][0];
-        transformed_points[column].y = input_matrix[column][1];
-        transformed_points[column].z = input_matrix[column][2];
+        transformed_points[column].x = input_matrix[0][column];
+        transformed_points[column].y = input_matrix[1][column];
+        transformed_points[column].z = input_matrix[2][column];
 
         // std::cout << input_points[column].x << ' ' << transformed_points[column].x << std::endl; // TODO - burada bug var!
     }
@@ -170,40 +101,133 @@ std::vector<parser::Vec3f> Transformator::transformPoints(const std::vector<pars
 
 }
 
-// Init 4x4 matrix
-Transformator::Transformator(){
-    // Init transformation matrix
-    this->transformation_matrix = createMatrix(4, 4);
 
-    transformation_matrix[0][0] = 1;
-    transformation_matrix[1][1] = 1;
-    transformation_matrix[2][2] = 1;
-    transformation_matrix[3][3] = 1;
-}
-
-// Direct rotate
-void Transformator::rotate(double angle){
-    // TODO
-}
 // Rotate around pivot vector, angle in degrees
-void Transformator::rotate(parser::Vec3f pivot_vector_start, parser::Vec3f pivot_vector_end, double angle){
-    // TODO
+void Transformator::rotate(parser::Vec3f u, double angle){
+    /*
+     * Using alternative method in the slides
+     * 1) Form v and w vectors from given u(pivot_vector)
+     * 2) Form the rotation matrix to match axis
+     * 3) Use axis-rotation matrices to rotate
+     * 4) Multiply all
+     */
+    // 1)
+    parser::Vec3f v;
+    parser::Vec3f w;
+    
+    // Form the first perpendicular vector
+    if(std::abs(u.x) < this->floating_precision && std::abs(u.y) < this->floating_precision){
+        // Avoid vanishing x-y parameters
+        v.x = 1;
+        v.y = 0;
+        v.z = 0;
+    }else{
+        v.x =  u.y;
+        v.y = -u.x;
+        v.z = 0;
+    }
+    
+    // Form the second perpendicular vector
+    w = MatOp::vectorCrossProduct(u, v);
+
+    // Normalize vectors
+    u = MatOp::vectorNormalize(u);
+    v = MatOp::vectorNormalize(v);
+    w = MatOp::vectorNormalize(w);
+    
+    // 2)
+    Transformator::Matrix M = createMatrix(4, 4);
+
+    M[0][0] = u.x;
+    M[0][1] = u.y;
+    M[0][2] = u.z;
+    M[0][3] = 0;
+
+    M[1][0] = v.x;
+    M[1][1] = v.y;
+    M[1][2] = v.z;
+    M[1][3] = 0;
+
+    M[2][0] = w.x;
+    M[2][1] = w.y;
+    M[2][2] = w.z;
+    M[2][3] = 0;
+
+    M[3][0] = 0;
+    M[3][1] = 0;
+    M[3][2] = 0;
+    M[3][3] = 1;
+
+    Transformator::printMatrix(M);
+    
+    Transformator::Matrix inv_M = createMatrix(4, 4);
+    
+    inv_M[0][0] = u.x;
+    inv_M[0][1] = v.x;
+    inv_M[0][2] = w.x;
+    inv_M[0][3] = 0;
+
+    inv_M[1][0] = u.y;
+    inv_M[1][1] = v.y;
+    inv_M[1][2] = w.y;
+    inv_M[1][3] = 0;
+
+    inv_M[2][0] = u.z;
+    inv_M[2][1] = v.z;
+    inv_M[2][2] = w.z;
+    inv_M[2][3] = 0;
+
+    inv_M[3][0] = 0;
+    inv_M[3][1] = 0;
+    inv_M[3][2] = 0;
+    inv_M[3][3] = 1;
+    
+    // 3)
+    Transformator::Matrix R = createMatrix(4, 4);
+
+    // Covert degrees to radian
+    angle = angle / 180 * M_PI;
+
+    // Form matrix
+    R[0][0] = 1;
+
+    R[1][1] =   std::cos(angle);
+    R[1][2] = - std::sin(angle);
+    R[2][1] =   std::sin(angle);
+    R[2][2] =   std::cos(angle);
+
+    R[3][3] = 1;
+
+    // 4)
+    // Multiply the object matrix to stack it
+    Transformator::Matrix rotation_matrix;
+
+    rotation_matrix = matmul(R, M);
+    rotation_matrix = matmul(inv_M, rotation_matrix);
+
+    this->transformation_matrix = matmul(rotation_matrix, this->transformation_matrix);
 }
 
 // Direct scale
 void Transformator::scale(double x_scale, double y_scale, double z_scale){
-    // TODO
+    Transformator::Matrix translation_matrix = createMatrix(4, 4);
+
+    // Form matrix
+    translation_matrix[0][0] = x_scale;
+    translation_matrix[1][1] = y_scale;
+    translation_matrix[2][2] = z_scale;
+    translation_matrix[3][3] = 1;
+
+    // Multiply the object matrix to stack it
+    this->transformation_matrix = matmul(translation_matrix, this->transformation_matrix);
 }
-// Scale around pivot
-void Transformator::scale(double x_scale, double y_scale, double z_scale, parser::Vec3f pivot_point){
-    // TODO
-}
+
 
 // Translation
 void Transformator::translate(parser::Vec3f offset){
     Transformator::Matrix translation_matrix = createMatrix(4, 4);
     
-    std::cout << offset.x << std::endl;
+    // std::cout << offset.x << std::endl;
     
     // Form matrix
     translation_matrix[0][0] = 1;
@@ -221,3 +245,31 @@ void Transformator::translate(parser::Vec3f offset){
 
 }
 
+
+void Transformator::printMatrix(const Transformator::Matrix &W){
+	int M = W.size();
+	int N = W[0].size();
+
+	printf("      ");
+	for(int n = 0; n < N; n++){
+		printf("%7d", n);
+	}
+	printf("\n");
+	printf("      ");
+	for(int n = 0; n < N+2; n++){
+		for(int x = 0 ; x < 7; x++){
+            printf("_");
+        }
+	}
+	printf("\n");
+
+	for(int m = 0; m < M; m++){
+		printf("%7d", m);
+		printf("  |");
+		for(int n = 0; n < N; n++){
+			printf("%7.2lf", W[m][n]);
+		}
+		printf("\n");
+	}
+
+}
