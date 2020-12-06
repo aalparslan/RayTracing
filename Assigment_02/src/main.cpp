@@ -9,7 +9,7 @@
 #include "IntersectionCalculator.hpp"
 #include "Transformator.hpp"
 #include "ColorCalculator.hpp"
-
+#include "SceneTransformations.hpp"
 
 #define INFINITE 40000
 using namespace std;
@@ -151,12 +151,16 @@ int main(int argc, char* argv[])
      * transformed system.
      */
     // Apply to triangles
-    std::cout << scene.vertex_data[scene.triangles[0].indices.v0_id].x << std::endl;
     SceneTransformations::applyTriangleModelTransformations(scene);
-    std::cout << scene.vertex_data[scene.triangles[0].indices.v0_id].x << std::endl;
+    // Appy to meshes
+    SceneTransformations::applyMeshModelTransformations(scene);
 
     // TODO - SPHERES! -> texture ile ic ice olcak bu!
-    
+    SceneTransformations::applySphereModelTransformations(scene);
+
+    cout << scene.vertex_data.size() << endl;
+    cout << scene.spheres[0].center_vertex_id << endl;
+    cout << scene.spheres[0].radius << endl;
 
     // Create variables AFTER object transformation is done for the scene
     IntersectionCalculator ic(scene);

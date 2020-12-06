@@ -15,10 +15,12 @@ class SceneTransformations{
 
     public:
     static void applyTriangleModelTransformations(parser::Scene &scene);
+    static void applyMeshModelTransformations(parser::Scene &scene);
+    static void applySphereModelTransformations(parser::Scene &scene);
 
     private:
     static std::vector<std::pair<char, char>> parseString(std::string str);
-    static void decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices);
+    static double decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices);
 };
 
 

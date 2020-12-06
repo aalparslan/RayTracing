@@ -23,10 +23,10 @@ class Transformator{
     std::vector<parser::Vec3f> transformPoints(const std::vector<parser::Vec3f> &input_points);
 
     // Rotate around pivot vector, angle in degrees
-    void rotate(parser::Vec3f pivot_vector, double angle);
+    void rotate(parser::Vec3f pivot_vector, float angle);
 
     // Direct scale
-    void scale(double x_scale, double y_scale, double z_scale);
+    void scale(float x_scale, float y_scale, float z_scale);
     
     // Translation
     void translate(parser::Vec3f offset);

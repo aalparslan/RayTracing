@@ -74,7 +74,7 @@ std::vector<parser::Vec3f> Transformator::transformPoints(const std::vector<pars
      */
     // 1)
     Transformator::Matrix input_matrix = createMatrix(4, input_points.size());
-
+    Transformator::printMatrix(this->transformation_matrix);
     // Map input to the matrix
     for(int column = 0; column < input_matrix[0].size(); column++){
         input_matrix[0][column] = input_points[column].x;
@@ -103,7 +103,7 @@ std::vector<parser::Vec3f> Transformator::transformPoints(const std::vector<pars
 
 
 // Rotate around pivot vector, angle in degrees
-void Transformator::rotate(parser::Vec3f u, double angle){
+void Transformator::rotate(parser::Vec3f u, float angle){
     /*
      * Using alternative method in the slides
      * 1) Form v and w vectors from given u(pivot_vector)
@@ -158,7 +158,7 @@ void Transformator::rotate(parser::Vec3f u, double angle){
     M[3][2] = 0;
     M[3][3] = 1;
 
-    Transformator::printMatrix(M);
+    // Transformator::printMatrix(M);
     
     Transformator::Matrix inv_M = createMatrix(4, 4);
     
@@ -209,7 +209,7 @@ void Transformator::rotate(parser::Vec3f u, double angle){
 }
 
 // Direct scale
-void Transformator::scale(double x_scale, double y_scale, double z_scale){
+void Transformator::scale(float x_scale, float y_scale, float z_scale){
     Transformator::Matrix translation_matrix = createMatrix(4, 4);
 
     // Form matrix

@@ -4,6 +4,7 @@ all:
 		src/MathematicalOperations.cpp \
 		src/Transformator.cpp \
 		src/ColorCalculator.cpp \
+		src/SceneTransformations.cpp \
 		src/parser.cpp \
 		src/ppm.cpp \
 		src/tinyxml2.cpp \
