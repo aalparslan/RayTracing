@@ -3,6 +3,23 @@
 #include <bits/stdc++.h>
 #include <stdexcept>
 
+
+void SceneTransformations::saveTextureFaceIds(parser::Scene &scene){
+    // Triangles
+    for(int triangle_index = 0; triangle_index < scene.triangles.size(); triangle_index++){
+        scene.triangles[triangle_index].texture_indices = scene.triangles[triangle_index].indices;
+    }
+
+    // Meshes
+    for(int mesh_index = 0; mesh_index < scene.meshes.size(); mesh_index++){
+        scene.meshes[mesh_index].texture_faces = std::vector<parser::Face>();
+        for(int face_index= 0; face_index < scene.meshes[mesh_index].faces.size(); face_index++){
+            scene.meshes[mesh_index].texture_faces.push_back(scene.meshes[mesh_index].faces[face_index]);
+        }
+    }
+
+
+}
 void SceneTransformations::applySphereModelTransformations(parser::Scene &scene){
     for(int sphere_index = 0; sphere_index < scene.spheres.size(); sphere_index++){
         parser::Sphere &sphere = scene.spheres[sphere_index];

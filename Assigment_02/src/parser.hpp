@@ -72,6 +72,7 @@ namespace parser
         int texture_id;
         int material_id;
         std::vector<Face> faces;
+        std::vector<Face> texture_faces;
         std::string transformations;
     };
 
@@ -80,6 +81,7 @@ namespace parser
         int texture_id;
         int material_id;
         Face indices;
+        Face texture_indices;
         std::string transformations;
     };
 

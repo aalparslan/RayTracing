@@ -150,6 +150,9 @@ int main(int argc, char* argv[])
      * once; hence, all cameras will see the same
      * transformed system.
      */
+    // Save face ids for texture mapping
+    SceneTransformations::saveTextureFaceIds(scene);
+
     // Apply to triangles
     SceneTransformations::applyTriangleModelTransformations(scene);
     // Appy to meshes
@@ -158,9 +161,6 @@ int main(int argc, char* argv[])
     // TODO - SPHERES! -> texture ile ic ice olcak bu!
     SceneTransformations::applySphereModelTransformations(scene);
 
-    cout << scene.vertex_data.size() << endl;
-    cout << scene.spheres[0].center_vertex_id << endl;
-    cout << scene.spheres[0].radius << endl;
 
     // Create variables AFTER object transformation is done for the scene
     IntersectionCalculator ic(scene);
