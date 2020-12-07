@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <string>
+#include "jpeg.hpp"
 
 namespace parser
 {
@@ -12,22 +14,22 @@ namespace parser
     {
         float x, y;
     };
-
+    
     struct Vec3f
     {
         float x, y, z;
     };
-
+    
     struct Vec3i
     {
         int x, y, z;
     };
-
+    
     struct Vec4f
     {
         float x, y, z, w;
     };
-
+    
     struct Camera
     {
         Vec3f position;
@@ -38,13 +40,13 @@ namespace parser
         int image_width, image_height;
         std::string image_name;
     };
-
+    
     struct PointLight
     {
         Vec3f position;
         Vec3f intensity;
     };
-
+    
     struct Material
     {
         Vec3f ambient;
@@ -65,17 +67,20 @@ namespace parser
         int v0_id;
         int v1_id;
         int v2_id;
+        Vec2f ua ;
+        Vec2f ub ;
+        Vec2f uc ;
+        
     };
-
+    
     struct Mesh
     {
         int texture_id;
         int material_id;
         std::vector<Face> faces;
-        std::vector<Face> texture_faces;
         std::string transformations;
     };
-
+    
     struct Triangle
     {
         int texture_id;
@@ -84,7 +89,7 @@ namespace parser
         Face texture_indices;
         std::string transformations;
     };
-
+    
     struct Sphere
     {
         int texture_id;
@@ -93,20 +98,63 @@ namespace parser
         float radius;
         std::string transformations;
     };
-
+    
     struct Rotation
     {
         float angle, x, y, z;
     };
-
+    
     struct Texture
     {
         std::string imageName;
         std::string interpolation;
         std::string decalMode;
         std::string appearance;
+        
+     
     };
+    
+    class TextureObject
+    {
+    private:
+        Texture texture;
+        int width;
+        int height;
+        unsigned char* image;
+        
+    public:
+        TextureObject(Texture texture){
+            this->texture = texture;
+            loadImage();
+        }
+        unsigned char* getImage(){
+            return image;
+        }
+        int getWidth(){
+            return width;
+        }
+        int getHeight(){
+            return height;
+        }
+        
+        Texture getTexture(){
+            return  texture;
+        }
+        
+    private:
+        void loadImage(){
 
+            char *cstr = &(texture.imageName[0]);
+            read_jpeg_header(cstr, width, height);
+            image = new unsigned char[width * height * 3];
+            read_jpeg(cstr, image, width, height);
+        }
+    };
+    
+    
+    
+    
+    
     struct Scene
     {
         //Data
@@ -126,10 +174,12 @@ namespace parser
         std::vector<Vec3f> scalings;
         std::vector<Rotation> rotations;
         std::vector<Texture> textures;
-
+        
         //Functions
         void loadFromXml(const std::string& filepath);
     };
+    
+
 }
 
 #endif
