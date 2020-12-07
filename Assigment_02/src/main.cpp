@@ -15,11 +15,13 @@
 using namespace std;
 
 // Measure time
-#include <chrono> 
-using namespace std::chrono; 
+#include <chrono>
+using namespace std::chrono;
 
 
-const int numberOfCores = thread::hardware_concurrency();
+//const int numberOfCores = thread::hardware_concurrency();
+const int numberOfCores = 1;
+
 
 
 
@@ -50,10 +52,10 @@ void loadCamera(parser::Camera &x, parser::Camera &cam, parser::Vec3f &camUVecto
 
 
 
-void initImage(parser::Scene *scene, unsigned char* &immage, parser::Camera cam){    
+void initImage(parser::Scene *scene, unsigned char* &immage, parser::Camera cam){
     int max = cam.image_width * cam.image_height * 3;
     immage =  new unsigned char [max];
-
+    
     // Below sets the background color
     int  k =0;
     for(int i =0 ; i < cam.image_width; i++){
@@ -68,7 +70,7 @@ void initImage(parser::Scene *scene, unsigned char* &immage, parser::Camera cam)
         }
     }
     
-
+    
 }
 parser::Ray generateRay(int i, int j, float pixelW, float pixelH, parser::Camera cam, parser::Vec3f camUVector){
     
@@ -98,11 +100,11 @@ parser::Ray generateRay(int i, int j, float pixelW, float pixelH, parser::Camera
     return ray;
     
 }
-void processImage(parser::Camera cam, parser::Scene *scene, int image_width, int finishHeight, int startingHeight, IntersectionCalculator *ic_pointer, ColorCalculator *cc, float pixelW, float pixelH, parser::Vec3f camUVector, unsigned char* immage){
+void processImage(parser::Camera cam, parser::Scene *scene, int image_width, int finishHeight, int startingHeight, IntersectionCalculator *ic_pointer, ColorCalculator *cc, float pixelW, float pixelH, parser::Vec3f camUVector, unsigned char* immage,  vector<parser::TextureObject> textureObjects){
     // Mind the reference!
     IntersectionCalculator &ic = *ic_pointer;
-
-
+    
+    
     for (int i = startingHeight; i < finishHeight; i++){
         for(int j = 0; j < cam.image_width; j++){
             
@@ -114,9 +116,9 @@ void processImage(parser::Camera cam, parser::Scene *scene, int image_width, int
             intersection = ic.intersectRay(ray, 1); //treshold 1 cunku tresholdun 1 oldugu nokta image plane 1 den kucuk oldugu noktalardaki kesisimler image planenin arkasinda kalacagindan gorunmeyecekler.
             
             if(intersection.t < INFINITE){
-                parser::Vec3f color = cc->computeColor(ray, intersection, scene->max_recursion_depth, scene, ic); // just one function for coloring
+                parser::Vec3f color = cc->computeColor(ray, intersection, scene->max_recursion_depth, scene, ic,textureObjects); // just one function for coloring
                 
-                // cout << immage << endl;
+                
                 int wherePixelStarts = i*(cam.image_width)*3 + j*3;
                 
                 
@@ -135,37 +137,77 @@ void processImage(parser::Camera cam, parser::Scene *scene, int image_width, int
 int main(int argc, char* argv[])
 {
     // Measure time
-    auto start = high_resolution_clock::now(); 
+    auto start = high_resolution_clock::now();
     
     // Sample usage for reading an XML scene file
     parser::Scene scene;
     
     scene.loadFromXml(argv[1]);
     
+    
+    vector<parser::TextureObject> textureObjects;
+    
+//
+    for(int i = 0; i < scene.textures.size(); i++){
+        parser::Texture texture = scene.textures[i];
+        parser::TextureObject obj  = *new parser::TextureObject(texture);
+        textureObjects.push_back(obj);
+    }
+//
+//
+//
+    for(int i = 0 ; i < scene.triangles.size(); i++){
 
+        std::cout << "textureid tr " <<std::endl;
+        cout<< scene.triangles[i].texture_id<<endl;
+        std::cout<<std::endl;
+    }
+//
+//    for(int i = 0 ; i < scene.triangles.size(); i++){
+//
+//        std::cout << "textureid tr "<<scene.triangles[i].texture_id <<std::endl;
+//        std::cout<<std::endl;
+//    }
+//
+//    for(int i = 0 ; i < scene.meshes.size(); i++){
+//
+//        std::cout << "textureid ms"<<scene.meshes[i].texture_id <<std::endl;
+//        cout<< scene.textures[scene.meshes[i].texture_id].imageName<<endl;
+//        std::cout<<std::endl;
+//    }
+    
+    
+    
+//    for(int i = 0 ; i < scene.meshes[0].faces.size(); i++){
+//        cout<<scene.meshes[0].faces[i].ua.x<<endl;
+////        cout<<scene.meshes[0].faces[i].v0_id<<endl;
+//
+//    }
+//    cout<<"printed!"<<endl;
 
+    
     /*
      * Model transformations here
      * Notice model transformations are applied only
      * once; hence, all cameras will see the same
      * transformed system.
      */
-    // Save face ids for texture mapping
-    SceneTransformations::saveTextureFaceIds(scene);
-
     // Apply to triangles
     SceneTransformations::applyTriangleModelTransformations(scene);
     // Appy to meshes
     SceneTransformations::applyMeshModelTransformations(scene);
-
+    
     // TODO - SPHERES! -> texture ile ic ice olcak bu!
+    
+    
+
     SceneTransformations::applySphereModelTransformations(scene);
-
-
+    
+    
     // Create variables AFTER object transformation is done for the scene
     IntersectionCalculator ic(scene);
     ColorCalculator cc(&scene);
-
+    
     for(auto x = scene.cameras.begin(); x < scene.cameras.end(); x++){
         
         
@@ -178,13 +220,13 @@ int main(int argc, char* argv[])
         // Create image
         unsigned char* immage;
         initImage(&scene, immage, cam);
-
+        
         
         
         const int width = (*x).image_width;
         const int height = (*x).image_height;
         if(numberOfCores == 0 || height < numberOfCores){
-            processImage(cam,  &scene, width , height, 0, &ic, &cc, pixelW, pixelH, camUVector, immage);
+            processImage(cam,  &scene, width , height, 0, &ic, &cc, pixelW, pixelH, camUVector, immage, textureObjects);
         }else{
             thread* threads = new thread[numberOfCores];
             const int heightIncrease = height/numberOfCores;
@@ -194,10 +236,10 @@ int main(int argc, char* argv[])
                 
                 if(i+1 != numberOfCores){
                     const int max_height = (i+1)*heightIncrease;
-                    threads[i] = thread(processImage, cam, &scene, width, max_height, min_height, &ic, &cc, pixelW, pixelH, camUVector, immage);
+                    threads[i] = thread(processImage, cam, &scene, width, max_height, min_height, &ic, &cc, pixelW, pixelH, camUVector, immage, textureObjects);
                 }else{
                     const int max_height = height;
-                    threads[i] = thread(processImage, cam, &scene, width, max_height, min_height, &ic, &cc, pixelW, pixelH, camUVector, immage);
+                    threads[i] = thread(processImage, cam, &scene, width, max_height, min_height, &ic, &cc, pixelW, pixelH, camUVector, immage, textureObjects);
                 }
             }
             
@@ -210,16 +252,16 @@ int main(int argc, char* argv[])
         
         // For every camera write another ppm file image.
         write_ppm(cam.image_name.c_str(), immage, cam.image_width, cam.image_height);
-
+        
         // Free memory
         delete[] immage;
     }
-
-
+    
+    
     
     // Print time passed
-    auto duration = duration_cast<microseconds>(high_resolution_clock::now() - start); 
-  
+    auto duration = duration_cast<microseconds>(high_resolution_clock::now() - start);
+    
     std::cout << "Time passed : " << duration.count() / 1000 / 1000 << " seconds" << std::endl;
     
     return 0;
