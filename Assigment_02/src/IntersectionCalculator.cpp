@@ -113,12 +113,15 @@ IntersectionCalculator::IntersectionData IntersectionCalculator::intersectRay(pa
                 
                 parser::Vec3f sphereCenter = scene.vertex_data[spheres[k].center_vertex_id-1];
                 parser::Vec3f normal = MatOp::vectorNormalize(MatOp::vectorAddition(point, MatOp::vectorMultiplication(sphereCenter, -1)));
-                //////////////////////
-                std::pair<double, double> UandV = findSphereUandV( sphereCenter, point);
-                intersection.UandV = UandV;
-                //////////////////////
                 intersection.materialId = scene.spheres[k].material_id;
                 intersection.texture_ID = scene.spheres[k].texture_id;
+                if(intersection.texture_ID != -1){
+                    //////////////////////
+                    std::pair<double, double> UandV = findSphereUandV( sphereCenter, point);
+                    intersection.UandV = UandV;
+                    //////////////////////
+                }
+                
                 intersection.normal     = normal;
                 intersection.t = t1;
                 
@@ -156,7 +159,7 @@ IntersectionCalculator::IntersectionData IntersectionCalculator::intersectRay(pa
         
         // Return the index that is closest and t value of the closes face
         std::pair<std::pair<int, float>, std::pair<double, double>> minimumData_UandV
-        =  intersectMesh(ray, scene.meshes[k].faces, scene.vertex_data, tmin, treshold, k);
+        =  intersectMesh(ray, scene.meshes[k].faces, scene.meshes[k].texture_id, scene.vertex_data, tmin, treshold, k);
         
         indexAndValueT = minimumData_UandV.first;
         
@@ -260,7 +263,7 @@ std::pair<double, double> calculateUandVForTriangleFace(parser::Scene scene, par
     std::pair<double, double> UandV;
     parser::Vec2f ua = face.ua;
     parser::Vec2f ub = face.ub;
-    parser::Vec2f uc = face. uc;
+    parser::Vec2f uc = face.uc;
     
     
     UandV.first = ua.x + beta * (ub.x - ua.x) + gamma * (uc.x - ua.x);
@@ -344,8 +347,11 @@ std::pair<float, std::pair<double, double>> IntersectionCalculator::intersectTri
     
     //calculateUandVForTriangle
     std::pair<float, std::pair<double, double>> result;
-    std::pair<double, double> UandV = calculateUandVForTriangleFace( scene,  face,  beta,  gamma );
-    result.second = UandV;
+    if(face.texture_id != -1){ // if there is o texture then there is no need to calculate uandv
+        std::pair<double, double> UandV = calculateUandVForTriangleFace( scene,  face,  beta,  gamma );
+        result.second = UandV;
+    }
+
     /////////////////////////
     
     // TODO -> t_0 icin e noktasini, yani camera position aliyorum, bu yanlis olabilir mi?? cunku canvas ile kamera arasindaysa gormemeli sanirim? ya da gormeli mi :)
@@ -364,7 +370,7 @@ std::pair<float, std::pair<double, double>> IntersectionCalculator::intersectTri
     
     
 }
-std::pair<std::pair<int, float>, std::pair<double, double>> IntersectionCalculator::intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, const std::vector<parser::Vec3f> &vertexData, const float tThreshold, const float naturalThreshold, const int meshIndex) const{
+std::pair<std::pair<int, float>, std::pair<double, double>> IntersectionCalculator::intersectMesh(const parser::Ray &ray, const std::vector<parser::Face> &faces, int texture_id, const std::vector<parser::Vec3f> &vertexData, const float tThreshold, const float naturalThreshold, const int meshIndex) const{
     /*
      This function is actually a set of combination for triangles.
      The structure implies there is a vector of faces that specify 3 vertex coordinates.
