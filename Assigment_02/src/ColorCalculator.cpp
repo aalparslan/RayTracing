@@ -44,14 +44,30 @@ parser::Vec3f ColorCalculator::computeLightContribution(parser::Vec3f point, par
     
 }
 
-parser::Vec3f ColorCalculator::computeDiffuse(int materialID, parser::Vec3f normal, parser::Vec3f normalizedLightDirection, parser::Vec3f irradiance ){
+//parser::Vec3f ColorCalculator::computeDiffuse(int materialID, parser::Vec3f normal, parser::Vec3f normalizedLightDirection, parser::Vec3f irradiance ){
+//
+//    normal = MatOp::vectorNormalize(normal);
+//    float cosTheta = fmax(0.0f,  MatOp::dot(normalizedLightDirection, normal));
+//
+//
+//    parser::Vec3f diffuse = MatOp::vectorMultiplication(irradiance, cosTheta);
+//    parser::Vec3f diffuseReflectance = getDiffuseReflectance(materialID);
+//    // Multiplying with kd
+//    diffuse.x *= diffuseReflectance.x;
+//    diffuse.y *= diffuseReflectance.y;
+//    diffuse.z *= diffuseReflectance.z;
+//
+//    return diffuse;
+//}
+
+
+parser::Vec3f ColorCalculator::computeDiffuse( parser::Vec3f texelConstant, parser::Vec3f normal,
+                                              parser::Vec3f normalizedLightDirection, parser::Vec3f irradiance ){
     
     normal = MatOp::vectorNormalize(normal);
     float cosTheta = fmax(0.0f,  MatOp::dot(normalizedLightDirection, normal));
-    
-    
     parser::Vec3f diffuse = MatOp::vectorMultiplication(irradiance, cosTheta);
-    parser::Vec3f diffuseReflectance = getDiffuseReflectance(materialID);
+    parser::Vec3f diffuseReflectance = texelConstant; // kd yerine bu kullanildi bu hem texelin colini hemde kd yi iceriyor.
     // Multiplying with kd
     diffuse.x *= diffuseReflectance.x;
     diffuse.y *= diffuseReflectance.y;
@@ -78,70 +94,182 @@ parser::Vec3f ColorCalculator::computeSpecular(int materialID, parser::Vec3f nor
 }
 
 
+parser::Vec3f ColorCalculator::CalculateTCC(int textureid,IntersectionCalculator::IntersectionData intersection, parser::Vec3f kd,
+                           vector<parser::TextureObject> textureObjects){
+    
+    if(textureid == -1 || textureObjects.size() < 1){ // no texture
+        return kd;
+    }
+    
+    
+    
+    parser::Texture texture = scenePTR->textures[textureid-1];
+    float u = intersection.UandV.first;
+    float v = intersection.UandV.second;
+    
+    int width = textureObjects[textureid-1].getWidth();
+    int height = textureObjects[textureid-1].getHeight();
+    unsigned char** image;
+    image = (textureObjects[textureid-1].getImage());
+    
+    
+    if(texture.appearance == "clamp"){
+        u = fmax(0., fmin(1., u));
+        v = fmax(0., fmin(1., v));
+    }else{
+        u -= floor(u);
+        v -= floor(v);
+    }
+    
+    if( u > 1 || u < 0){
+        std::cout << "There is a mistake!"<<std::endl;
+    }
+    if( v > 1 || v < 0){
+        std::cout << "There is a mistake!"<<std::endl;
+    }
 
-parser::Vec3f ColorCalculator::computeColor(parser::Ray ray, IntersectionCalculator::IntersectionData intersection, int recursionNumber,parser::Scene *scene, IntersectionCalculator &ic){
+    
+    
+    u *= width;
+    if (u >= width) u--;
+    v *= height;
+    if (v >= height) v--;
+    parser::Vec3f color;
+    
+    if (texture.interpolation == "nearest" || ((v * width * 3 + u * 3) + 3 + width * 3 > width*height*3)) {
+        
+        const unsigned int pos = ((int)v) * width * 3 + ((int)u) * 3;
+        color.x = (*image)[pos];
+        color.y = (*image)[pos +1];
+        color.z = (*image)[pos +2];
+    } else { //bilinear
+        const unsigned int p = u;
+        const unsigned int q = v;
+        const float dx = u - p;
+        const float dy = v - q;
+        const unsigned int pos = q * width * 3 + p * 3;
+        
+        color.x = (*image)[pos] * (1 - dx) * (1 - dy);
+        color.x += (*image)[pos + 3] * (dx) * (1 - dy);
+        color.x += (*image)[pos + 3 + width * 3] * (dx) * (dy);
+        color.x += (*image)[pos + width * 3] * (1 - dx) * (dy);
+        
+        color.y = (*image)[pos + 1] * (1 - dx) * (1 - dy);
+        color.y += (*image)[pos + 3 + 1] * (dx) * (1 - dy);
+        color.y += (*image)[pos + 3 + width * 3 + 1] * (dx) * (dy);
+        color.y += (*image)[pos + width * 3 + 1] * (1 - dx) * (dy);
+        
+        color.z = (*image)[pos + 2] * (1 - dx) * (1 - dy);
+        color.z += (*image)[pos + 3 + 2] * (dx) * (1 - dy);
+        color.z += (*image)[pos + 3 + width * 3 + 2] * (dx) * (dy);
+        color.z += (*image)[pos + width * 3 + 2] * (1 - dx) * (dy);
+    }
+    
+    if(texture.decalMode == "replace_kd" || texture.decalMode == "blend_kd"){
+        color.x /= 255.;
+        color.y /= 255.;
+        color.z /= 255.;
+    }
+    
+    if (texture.decalMode == "blend_kd"){
+        
+        color = MatOp::vectorDivision(MatOp::vectorAddition(color, kd), 2.);
+    }
+    return color;
+    
+}
+
+
+
+parser::Vec3f ColorCalculator::computeColor(parser::Ray ray, IntersectionCalculator::IntersectionData intersection, int recursionNumber,parser::Scene *scene, IntersectionCalculator &ic, vector<parser::TextureObject> textureObjects){
+    
     
     parser::Vec3f pixelColor = {};
     int materialID = intersection.materialId;
-    parser::Vec3f point = MatOp::vectorAddition(ray.a, MatOp::vectorMultiplication(ray.b, intersection.t)); // find point on the object.
-    parser::Vec3f eyeVector = MatOp::vectorSubtraction(ray.a, point);
-    parser::Vec3f normalizedEyeVector = MatOp::vectorNormalize(eyeVector);
-    parser::Vec3f ambientReflectance = getAmbientReflectance(materialID);
-    parser::Vec3f ambienLight = scenePTR->ambient_light;
-    pixelColor.x = (ambienLight.x * ambientReflectance.x);
-    pixelColor.y = (ambienLight.y * ambientReflectance.y);
-    pixelColor.z = (ambienLight.z * ambientReflectance.z);
-    
-    
-    for(auto y = scene->point_lights.begin(); y < scene->point_lights.end(); y++){ //Her bir light source icin D ve S hesaplar
-        
-        parser::Vec3f lightPosition = (*y).position;
-        parser::Vec3f lightDirection = MatOp::vectorAddition(lightPosition, MatOp::vectorMultiplication(point, -1));
-        parser::Vec3f normalizedLightDirection = MatOp::vectorNormalize(lightDirection); //  L - P = toLight
-        parser::Ray shadowRay;
-        parser::Vec3f intOffset = MatOp::vectorMultiplication(normalizedLightDirection, scenePTR->shadow_ray_epsilon);
-        shadowRay.a = MatOp::vectorAddition(point, intOffset);
-        shadowRay.b = normalizedLightDirection;
-        float shadowIntersection = ic.intersectRay(shadowRay, 0).t; //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
-        
-        if(shadowIntersection >= MatOp::vectorLength(lightDirection)){
-            
-            
-            parser::Vec3f irradiance = computeLightContribution(point, (*y));
-            parser::Vec3f diffuseContribution = computeDiffuse(materialID,  intersection.normal, normalizedLightDirection, irradiance );
-            
-            pixelColor = MatOp::vectorAddition(diffuseContribution, pixelColor); // add diffuse contribution to the pixel color
-            
-            // compute specular contribution
-            parser::Vec3f normalizedHalfVector = MatOp::vectorNormalize(MatOp::vectorAddition(normalizedLightDirection, normalizedEyeVector));
-            parser::Vec3f specularContribution = computeSpecular(materialID, intersection.normal, irradiance, normalizedHalfVector );
-            pixelColor = MatOp::vectorAddition(specularContribution, pixelColor); // add specular contribution to the pixel color
-        }
-        else{
-            
-            continue;
-        }
+    int textureid;
+    if(textureObjects.size() < 1){
+        textureid = -1;
+    }else{
+        textureid = intersection.texture_ID;
         
     }
+    parser::Vec3f kd = scenePTR->materials[materialID-1].diffuse;
     
-    parser::Vec3f mirrorComponenet = scene->materials[materialID-1].mirror;
+    parser::Vec3f TexelColorConstant = CalculateTCC(textureid, intersection, kd, textureObjects );
     
-    if(recursionNumber > 0 && (mirrorComponenet.x > 0 || mirrorComponenet.y > 0 || mirrorComponenet.z > 0)){
+    bool isReplaceAll;
+    if(textureid == -1 ){
+        isReplaceAll = false;
+    }else{
+        isReplaceAll = (scene->textures[textureid-1].decalMode == "replace_all");
+    }
+    
+    
+    
+    if(isReplaceAll){
         
-        parser::Ray reflectedRay;
-        float cosTheta = MatOp::dot(intersection.normal, normalizedEyeVector);
-        reflectedRay.b = MatOp::vectorAddition(MatOp::vectorMultiplication(normalizedEyeVector, -1), MatOp::vectorMultiplication(intersection.normal, 2*cosTheta));
-        reflectedRay.a = MatOp::vectorAddition(point ,MatOp::vectorMultiplication(reflectedRay.b, scenePTR->shadow_ray_epsilon) );
-        IntersectionCalculator::IntersectionData reflectedIntersection = ic.intersectRay(reflectedRay,0); //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
+        pixelColor = TexelColorConstant;
+    }else{ // if not replace all
+        parser::Vec3f point = MatOp::vectorAddition(ray.a, MatOp::vectorMultiplication(ray.b, intersection.t)); // find point on the object.
+        parser::Vec3f eyeVector = MatOp::vectorSubtraction(ray.a, point);
+        parser::Vec3f normalizedEyeVector = MatOp::vectorNormalize(eyeVector);
+        parser::Vec3f ambientReflectance = getAmbientReflectance(materialID);
+        parser::Vec3f ambienLight = scenePTR->ambient_light;
+        pixelColor.x = (ambienLight.x * ambientReflectance.x);
+        pixelColor.y = (ambienLight.y * ambientReflectance.y);
+        pixelColor.z = (ambienLight.z * ambientReflectance.z);
         
-        if(reflectedIntersection.t < INFINITE && reflectedIntersection.t > 0){ //  ray hits an object
+        
+        for(auto y = scene->point_lights.begin(); y < scene->point_lights.end(); y++){ //Her bir light source icin D ve S hesaplar
             
-            //parser::Ray ray, IntersectionCalculator::IntersectionData intersection, int recursionNumber,parser::Scene *scene
-            parser::Vec3f reflectedRadiance = computeColor(reflectedRay, reflectedIntersection, recursionNumber-1, scene, ic);
-            reflectedRadiance.x *= mirrorComponenet.x;
-            reflectedRadiance.y *= mirrorComponenet.y;
-            reflectedRadiance.z *= mirrorComponenet.z;
-            pixelColor = MatOp::vectorAddition(reflectedRadiance, pixelColor);
+            parser::Vec3f lightPosition = (*y).position;
+            parser::Vec3f lightDirection = MatOp::vectorAddition(lightPosition, MatOp::vectorMultiplication(point, -1));
+            parser::Vec3f normalizedLightDirection = MatOp::vectorNormalize(lightDirection); //  L - P = toLight
+            parser::Ray shadowRay;
+            parser::Vec3f intOffset = MatOp::vectorMultiplication(normalizedLightDirection, scenePTR->shadow_ray_epsilon);
+            shadowRay.a = MatOp::vectorAddition(point, intOffset);
+            shadowRay.b = normalizedLightDirection;
+            float shadowIntersection = ic.intersectRay(shadowRay, 0).t; //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
+            
+            if(shadowIntersection >= MatOp::vectorLength(lightDirection)){
+                
+                
+                parser::Vec3f irradiance = computeLightContribution(point, (*y));
+                parser::Vec3f diffuseContribution = computeDiffuse(TexelColorConstant, intersection.normal, normalizedLightDirection, irradiance );
+                
+                pixelColor = MatOp::vectorAddition(diffuseContribution, pixelColor); // add diffuse contribution to the pixel color
+                
+                // compute specular contribution
+                parser::Vec3f normalizedHalfVector = MatOp::vectorNormalize(MatOp::vectorAddition(normalizedLightDirection, normalizedEyeVector));
+                parser::Vec3f specularContribution = computeSpecular(materialID, intersection.normal, irradiance, normalizedHalfVector );
+                pixelColor = MatOp::vectorAddition(specularContribution, pixelColor); // add specular contribution to the pixel color
+            }
+            else{
+                
+                continue;
+            }
+            
+        }
+        
+        parser::Vec3f mirrorComponenet = scene->materials[materialID-1].mirror;
+        
+        if(recursionNumber > 0 && (mirrorComponenet.x > 0 || mirrorComponenet.y > 0 || mirrorComponenet.z > 0)){
+            
+            parser::Ray reflectedRay;
+            float cosTheta = MatOp::dot(intersection.normal, normalizedEyeVector);
+            reflectedRay.b = MatOp::vectorAddition(MatOp::vectorMultiplication(normalizedEyeVector, -1), MatOp::vectorMultiplication(intersection.normal, 2*cosTheta));
+            reflectedRay.a = MatOp::vectorAddition(point ,MatOp::vectorMultiplication(reflectedRay.b, scenePTR->shadow_ray_epsilon) );
+            IntersectionCalculator::IntersectionData reflectedIntersection = ic.intersectRay(reflectedRay,0); //treshold 0 cunku belli bir noktanin otesindeki kesisimleri isteme gibi bir sartimiz yok
+            
+            if(reflectedIntersection.t < INFINITE && reflectedIntersection.t > 0){ //  ray hits an object
+                
+                //parser::Ray ray, IntersectionCalculator::IntersectionData intersection, int recursionNumber,parser::Scene *scene
+                parser::Vec3f reflectedRadiance = computeColor(reflectedRay, reflectedIntersection, recursionNumber-1, scene, ic, textureObjects);
+                reflectedRadiance.x *= mirrorComponenet.x;
+                reflectedRadiance.y *= mirrorComponenet.y;
+                reflectedRadiance.z *= mirrorComponenet.z;
+                pixelColor = MatOp::vectorAddition(reflectedRadiance, pixelColor);
+            }
         }
     }
     
