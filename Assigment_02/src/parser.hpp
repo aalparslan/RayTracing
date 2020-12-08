@@ -69,6 +69,7 @@ namespace parser
         Vec2f ua ;
         Vec2f ub ;
         Vec2f uc ;
+        int texture_id;
     };
     
     struct Mesh
