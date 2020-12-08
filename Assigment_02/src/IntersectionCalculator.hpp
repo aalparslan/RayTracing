@@ -37,6 +37,7 @@ private:
     std::pair<std::pair<int, float>, std::pair<double, double>> intersectMesh(
                                         const parser::Ray &ray,
                                         const std::vector<parser::Face> &faces,
+                                        int texture_id,
                                         const std::vector<parser::Vec3f> &vertexData,
                                         const float tThreshold,                 // Threshold to determine if the vertex is close than others
                                         const float naturalThreshold,           // Threshold to determine if a vertex intersection is really an intersection in 3D world(-1 output etc.)
