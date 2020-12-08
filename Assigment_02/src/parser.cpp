@@ -272,6 +272,7 @@ void parser::Scene::loadFromXml(const std::string& filepath)
         while (!(stream >> face.v0_id).eof())
         {
             stream >> face.v1_id >> face.v2_id;
+            face.texture_id = mesh.texture_id;
             if(mesh.texture_id != -1 ){ // if there is a texture then set ua, ub uc
                 face.ua  = tex_coord_data[face.v0_id -1];
                 face.ub = tex_coord_data[face.v1_id -1];
