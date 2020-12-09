@@ -107,7 +107,7 @@ void processImage(parser::Camera cam, parser::Scene *scene, int image_width, int
     int fark = finishHeight - startingHeight;
     
     for (int i = startingHeight; i < finishHeight; i++){
-        cout<<100*(i - startingHeight)/ fark<<"%"<<endl;
+        // cout<<100*(i - startingHeight)/ fark<<"%"<<endl;
         for(int j = 0; j < cam.image_width; j++){
             
             parser::Ray ray;

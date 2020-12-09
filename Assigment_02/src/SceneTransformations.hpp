@@ -22,7 +22,7 @@ class SceneTransformations{
     
     private:
     static std::vector<std::pair<char, char>> parseString(std::string str);
-    static double decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices);
+    static double decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_rotate);
 };
 
 

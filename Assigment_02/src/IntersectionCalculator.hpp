@@ -86,6 +86,7 @@ private:
     // Helper private methods
     bool intersectBox(const parser::Ray &ray, const MinimumMaximumPoints &minimumMaximumPoints) const;
     parser::Vec3f computeNormalVector(const parser::Face &face, const std::vector<parser::Vec3f> &vertex_data) const;
+    std::pair<double, double> findSphereUandV(const parser::Sphere& sphere, parser::Vec3f point) const;
 };
 
 #endif

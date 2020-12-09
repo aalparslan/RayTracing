@@ -97,6 +97,7 @@ namespace parser
         int center_vertex_id;
         float radius;
         std::string transformations;
+        Vec3f base_texture_vector;
     };
     
     struct Rotation

@@ -9,9 +9,11 @@ all:
 		src/ppm.cpp \
 		src/tinyxml2.cpp \
 		src/main.cpp \
+		src/jpeg.cpp \
 		-o raytracer \
 		-std=c++11 \
 		-pthread \
+		-ljpeg \
 		-g
 
 

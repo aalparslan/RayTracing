@@ -66,16 +66,37 @@ float IntersectionCalculator::intersectSphere(parser::Ray ray, parser::Sphere sp
     
 }
 
-std::pair<double, double> findSphereUandV(parser::Vec3f sphereCenter, parser::Vec3f point){
+std::pair<double, double> IntersectionCalculator::findSphereUandV(const parser::Sphere& sphere, parser::Vec3f point) const{
+    const parser::Vec3f sphereCenter = scene.vertex_data[sphere.center_vertex_id-1];
+    const parser::Vec3f baseTextureVector = sphere.base_texture_vector;
+
+    parser::Vec3f vectorToPoint = MatOp::vectorDifference(point, sphereCenter);
+    vectorToPoint = MatOp::vectorNormalize(vectorToPoint);
     
-    parser::Vec3f vectorToPoint = vectorDifference(point, sphereCenter);
-    vectorToPoint = vectorNormalize(vectorToPoint);
-    //parser::Vec3f newSphereCenter = {0.0,0.0,0.0};
-    double teta =  acos(vectorToPoint.y); // teta is in radians.
-    double fi = atan2(vectorToPoint.z, vectorToPoint.x);
+    // Already normalized and from sphere center
+    // Create a base vector to hold base texture reference
+    double baseTeta = acos(baseTextureVector.y);
+    double baseFi   = atan2(baseTextureVector.z, baseTextureVector.x);
+
+    double teta = acos(vectorToPoint.y); // teta is in radians.
+    double fi   = atan2(vectorToPoint.z, vectorToPoint.x);
     
+    // Set based on the reference
+    double baseU = (-baseFi + M_PI)/ (2*M_PI);
+    double baseV = baseTeta/M_PI; 
+
     double u = (-fi + M_PI)/ (2*M_PI);
     double v = teta/M_PI;
+
+    u = u - baseU;
+    v = v - baseV;
+
+    // Do not go outside the image boundaries
+    if(u > 1) u = u - 1;
+    else if(u < 0) u = u + 1;
+    if(v > 1) v = v - 1;
+    else if(v < 0) v = v + 1;
+    
     
     std::pair<double, double> UandV;
     UandV.first = u;
@@ -100,7 +121,8 @@ IntersectionCalculator::IntersectionData IntersectionCalculator::intersectRay(pa
     for(int k = 0; k < spheres.size(); k++){
         
         t1 = intersectSphere(ray, spheres[k]);
-        
+
+
         if(t1 >= treshold){ // BUNU NEDEN 1 diyoruz ya tam anlamadim?? --> treshold intersection pointin nerde
             //olacagini belirlerken kullaniliyor. 1 den buyuk oldugu durumda image planin gorunmeyen kismiyla ilgilenmiyoruz demek
             
@@ -117,7 +139,7 @@ IntersectionCalculator::IntersectionData IntersectionCalculator::intersectRay(pa
                 intersection.texture_ID = scene.spheres[k].texture_id;
                 if(intersection.texture_ID != -1){
                     //////////////////////
-                    std::pair<double, double> UandV = findSphereUandV( sphereCenter, point);
+                    std::pair<double, double> UandV = findSphereUandV(scene.spheres[k], point);
                     intersection.UandV = UandV;
                     //////////////////////
                 }

@@ -1,5 +1,6 @@
 #include "SceneTransformations.hpp"
 #include "Transformator.hpp"
+#include "MathematicalOperations.hpp"
 #include <bits/stdc++.h>
 #include <stdexcept>
 
@@ -30,16 +31,20 @@ void SceneTransformations::applySphereModelTransformations(parser::Scene &scene)
 
 
         std::vector<parser::Vec3f> sphere_center(1);
+        std::vector<parser::Vec3f> texture_vector(1);
         
-        // Calculate the vertices            
+        // Calculate the center and texture vector
         sphere_center[0] = scene.vertex_data[sphere.center_vertex_id-1];
+        texture_vector[0] = parser::Vec3f({1., 1., 0.});
         
         // Apply it!
-        double raidus_mult = decideDoOperation(op_codes, scene, sphere_center);
+        double raidus_mult = decideDoOperation(op_codes, scene, sphere_center, false);
+        decideDoOperation(op_codes, scene, texture_vector, true);
 
         // Map back to the sphere
         scene.vertex_data.push_back(sphere_center[0]);
         sphere.center_vertex_id = scene.vertex_data.size();
+        sphere.base_texture_vector = MatOp::vectorNormalize(texture_vector[0]);
 
         // Do not forget to update radius!
         sphere.radius = sphere.radius * raidus_mult;
@@ -70,7 +75,7 @@ void SceneTransformations::applyMeshModelTransformations(parser::Scene &scene){
         }
 
         // Apply it!
-        decideDoOperation(op_codes, scene, triangle_vertices);
+        decideDoOperation(op_codes, scene, triangle_vertices, false);
 
         // Map back to the faces
         int counter2 = 0;
@@ -106,7 +111,7 @@ void SceneTransformations::applyTriangleModelTransformations(parser::Scene &scen
 
         // Apply it!
         // std::cout << triangle_vertices[0].x << std::endl;
-        decideDoOperation(op_codes, scene, triangle_vertices);
+        decideDoOperation(op_codes, scene, triangle_vertices, false);
         // std::cout << triangle_vertices[0].x << std::endl;
 
         // Add new vertices to the end and fix the points
@@ -132,7 +137,7 @@ std::vector<std::pair<char, char>> SceneTransformations::parseString(std::string
 
     return all_codes;
 }
-double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices){
+double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_rotate){
     /*
      * Do operations and return the scaling factor.
      * This factor is computed on x axis scale component and useful for Sphere raidus calculations.
@@ -152,15 +157,16 @@ double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>
         transformation_index = transformation_index - 1;
 
         switch(operation_codes[operation_num].first){
-            case 's': {
+            case 's': if(!only_rotate) {
                 scale_multiplier = scale_multiplier * scene.scalings[transformation_index].x;
                 t.scale(
                     scene.scalings[transformation_index].x,
                     scene.scalings[transformation_index].y,
                     scene.scalings[transformation_index].z
                 );
-                break;
+                
             }
+            break;
 
             case 'r': {
                 parser::Vec3f rotate_around;
@@ -171,13 +177,13 @@ double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>
                 float angle = scene.rotations[transformation_index].angle;
                 
                 t.rotate(rotate_around, angle);
-                break;
             }
+            break;
 
-            case 't': {
+            case 't': if(!only_rotate){
                 t.translate(scene.translations[transformation_index]);
-                break;
             }
+            break;
             
             default:
                 throw std::invalid_argument("Can't decide transformation operation, possibly parsing failed...");
