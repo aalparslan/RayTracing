@@ -122,6 +122,10 @@ void parser::Scene::loadFromXml(const std::string& filepath)
     {
         Material material;
         child = element->FirstChildElement("MirrorReflectance");
+ 
+        material.mirror.x=0;
+        material.mirror.y=0; // if there is no mirror field then initiate it to Zero.s
+        material.mirror.z=0;
         
         if (child) {
             stream << child->GetText() << std::endl;
