@@ -23,8 +23,8 @@ class SceneTransformations{
     static parser::Vec3f rotateTextureVector(parser::Vec3f my_vec, std::string transformations, const parser::Scene &scene);
 
     private:
-    static std::vector<std::pair<char, char>> parseString(std::string str);
-    static double decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_rotate);
+    static std::vector<std::pair<char, int>> parseString(std::string str);
+    static double decideDoOperation(std::vector<std::pair<char, int>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_rotate);
 };
 
 

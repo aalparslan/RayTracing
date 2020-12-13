@@ -8,7 +8,7 @@
 parser::Vec3f SceneTransformations::rotateTextureVector(parser::Vec3f my_vec, std::string transformations, const parser::Scene &scene){
   std::vector<parser::Vec3f> process_vector(1);
   process_vector[0] = my_vec;
-  std::vector<std::pair<char, char>> op_codes = SceneTransformations::parseString(transformations);
+  std::vector<std::pair<char, int>> op_codes = SceneTransformations::parseString(transformations);
   SceneTransformations::decideDoOperation(op_codes, scene, process_vector, true);
   my_vec = process_vector[0];
 
@@ -36,27 +36,24 @@ void SceneTransformations::applySphereModelTransformations(parser::Scene &scene)
         std::string transformations = scene.spheres[sphere_index].transformations;
 
         // Find the transformation
-        std::vector<std::pair<char, char>> op_codes = parseString(transformations);
+        std::vector<std::pair<char, int>> op_codes = parseString(transformations);
 
 
         std::vector<parser::Vec3f> sphere_center(1);
-        std::vector<parser::Vec3f> texture_vector(1);
 
-        // Calculate the center and texture vector
+        // Calculate the center
         sphere_center[0] = scene.vertex_data[sphere.center_vertex_id-1];
-        texture_vector[0] = parser::Vec3f({0., 1., 0.});
 
         // Apply it!
         double raidus_mult = decideDoOperation(op_codes, scene, sphere_center, false);
-        decideDoOperation(op_codes, scene, texture_vector, true);
 
         // Map back to the sphere
         scene.vertex_data.push_back(sphere_center[0]);
         sphere.center_vertex_id = scene.vertex_data.size();
-        sphere.base_texture_vector = MatOp::vectorNormalize(texture_vector[0]);
 
         // Do not forget to update radius!
         sphere.radius = sphere.radius * raidus_mult;
+
 
     }
 }
@@ -66,7 +63,7 @@ void SceneTransformations::applyMeshModelTransformations(parser::Scene &scene){
         std::string transformations = scene.meshes[mesh_index].transformations;
 
         // Find the transformation
-        std::vector<std::pair<char, char>> op_codes = parseString(transformations);
+        std::vector<std::pair<char, int>> op_codes = parseString(transformations);
 
 
         std::vector<parser::Vec3f> triangle_vertices(faces.size()*3);
@@ -109,7 +106,7 @@ void SceneTransformations::applyTriangleModelTransformations(parser::Scene &scen
         std::string transformations = scene.triangles[triangle_index].transformations;
 
         // Find the transformation
-        std::vector<std::pair<char, char>> op_codes = parseString(transformations);
+        std::vector<std::pair<char, int>> op_codes = parseString(transformations);
 
         // Calculate the vertices
         std::vector<parser::Vec3f> triangle_vertices;
@@ -133,20 +130,32 @@ void SceneTransformations::applyTriangleModelTransformations(parser::Scene &scen
 
     }
 }
-std::vector<std::pair<char, char>> SceneTransformations::parseString(std::string str){
+std::vector<std::pair<char, int>> SceneTransformations::parseString(std::string str){
     std::istringstream stream(str);
 
-    std::vector<std::pair<char, char>> all_codes;
+    std::vector<std::pair<char, int>> all_codes;
 
 
     std::string code;
     while(stream >> code){
-        all_codes.push_back(std::pair<char, char>(code[0], code[1]));
+        int total = 0;
+
+        // Go through the char digits...
+        for(int counter = 1; counter < code.length(); counter++){
+          int current_code = code[counter] - '0';
+
+          if(current_code <= 9 && current_code >= 0){
+            total += current_code * std::pow(10, code.length() - counter - 1);
+          }
+
+        }
+
+        all_codes.push_back(std::pair<char, int>(code[0], total));
     }
 
     return all_codes;
 }
-double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_texture_transformation){
+double SceneTransformations::decideDoOperation(std::vector<std::pair<char, int>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_texture_transformation){
     /*
      * Do operations and return the scaling factor.
      * This factor is computed on x axis scale component and useful for Sphere raidus calculations.
@@ -161,7 +170,7 @@ double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>
 
     for(int operation_num = 0; operation_num < operation_codes.size(); operation_num++){
 
-        int transformation_index = operation_codes[operation_num].second - '0';
+        int transformation_index = operation_codes[operation_num].second;
         // Be sure indices start with 1!
         transformation_index = transformation_index - 1;
 
