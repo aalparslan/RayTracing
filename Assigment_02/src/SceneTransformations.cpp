@@ -5,6 +5,15 @@
 #include <stdexcept>
 
 
+parser::Vec3f SceneTransformations::rotateTextureVector(parser::Vec3f my_vec, std::string transformations, const parser::Scene &scene){
+  std::vector<parser::Vec3f> process_vector(1);
+  process_vector[0] = my_vec;
+  std::vector<std::pair<char, char>> op_codes = SceneTransformations::parseString(transformations);
+  SceneTransformations::decideDoOperation(op_codes, scene, process_vector, true);
+  my_vec = process_vector[0];
+
+  return my_vec;
+}
 void SceneTransformations::saveTextureFaceIds(parser::Scene &scene){
     // Triangles
     for(int triangle_index = 0; triangle_index < scene.triangles.size(); triangle_index++){
@@ -32,11 +41,11 @@ void SceneTransformations::applySphereModelTransformations(parser::Scene &scene)
 
         std::vector<parser::Vec3f> sphere_center(1);
         std::vector<parser::Vec3f> texture_vector(1);
-        
+
         // Calculate the center and texture vector
         sphere_center[0] = scene.vertex_data[sphere.center_vertex_id-1];
-        texture_vector[0] = parser::Vec3f({1., 1., 0.});
-        
+        texture_vector[0] = parser::Vec3f({0., 1., 0.});
+
         // Apply it!
         double raidus_mult = decideDoOperation(op_codes, scene, sphere_center, false);
         decideDoOperation(op_codes, scene, texture_vector, true);
@@ -61,13 +70,13 @@ void SceneTransformations::applyMeshModelTransformations(parser::Scene &scene){
 
 
         std::vector<parser::Vec3f> triangle_vertices(faces.size()*3);
-            
+
         // Apply to each face!
         int counter1 = 0;
         for(int face_index = 0; face_index < faces.size(); face_index++){
             parser::Face &face = faces[face_index];
 
-            // Calculate the vertices            
+            // Calculate the vertices
             triangle_vertices[counter1++] = (scene.vertex_data[face.v0_id-1]);
             triangle_vertices[counter1++] = (scene.vertex_data[face.v1_id-1]);
             triangle_vertices[counter1++] = (scene.vertex_data[face.v2_id-1]);
@@ -81,7 +90,7 @@ void SceneTransformations::applyMeshModelTransformations(parser::Scene &scene){
         int counter2 = 0;
         for(int face_index = 0; face_index < faces.size(); face_index++){
             parser::Face &face = faces[face_index];
-            
+
             // Add new vertices to the end and fix the points
             scene.vertex_data.push_back(triangle_vertices[counter2++]);
             face.v0_id = scene.vertex_data.size();
@@ -137,7 +146,7 @@ std::vector<std::pair<char, char>> SceneTransformations::parseString(std::string
 
     return all_codes;
 }
-double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_rotate){
+double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>> operation_codes, const parser::Scene &scene, std::vector<parser::Vec3f> &target_vertices, bool only_texture_transformation){
     /*
      * Do operations and return the scaling factor.
      * This factor is computed on x axis scale component and useful for Sphere raidus calculations.
@@ -147,44 +156,53 @@ double SceneTransformations::decideDoOperation(std::vector<std::pair<char, char>
     if(operation_codes.size() == 0){
         return 1.0;
     }
-    
+
     Transformator t;
 
     for(int operation_num = 0; operation_num < operation_codes.size(); operation_num++){
-        
+
         int transformation_index = operation_codes[operation_num].second - '0';
         // Be sure indices start with 1!
         transformation_index = transformation_index - 1;
 
         switch(operation_codes[operation_num].first){
-            case 's': if(!only_rotate) {
+            case 's': if(!only_texture_transformation) {
                 scale_multiplier = scale_multiplier * scene.scalings[transformation_index].x;
                 t.scale(
                     scene.scalings[transformation_index].x,
                     scene.scalings[transformation_index].y,
                     scene.scalings[transformation_index].z
                 );
-                
+
             }
             break;
 
-            case 'r': {
+            case 'r': if(!only_texture_transformation){
                 parser::Vec3f rotate_around;
                 rotate_around.x = scene.rotations[transformation_index].x;
                 rotate_around.y = scene.rotations[transformation_index].y;
                 rotate_around.z = scene.rotations[transformation_index].z;
 
                 float angle = scene.rotations[transformation_index].angle;
-                
+
                 t.rotate(rotate_around, angle);
+            }else{
+              parser::Vec3f rotate_around;
+              rotate_around.x = scene.rotations[transformation_index].x;
+              rotate_around.y = scene.rotations[transformation_index].y;
+              rotate_around.z = scene.rotations[transformation_index].z;
+
+              float angle = -scene.rotations[transformation_index].angle;
+
+              t.rotate(rotate_around, angle);
             }
             break;
 
-            case 't': if(!only_rotate){
+            case 't': if(!only_texture_transformation){
                 t.translate(scene.translations[transformation_index]);
             }
             break;
-            
+
             default:
                 throw std::invalid_argument("Can't decide transformation operation, possibly parsing failed...");
         }

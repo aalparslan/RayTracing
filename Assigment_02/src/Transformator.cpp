@@ -45,11 +45,11 @@ Transformator::Matrix Transformator::matmul(const Transformator::Matrix &m1, con
             result_matrix[m1_row_counter][m2_column_counter] = value;
 
         }
-        
+
     }
 
     return result_matrix;
-    
+
 }
 
 // Create matrix from the given dimensions
@@ -74,7 +74,7 @@ std::vector<parser::Vec3f> Transformator::transformPoints(const std::vector<pars
      */
     // 1)
     Transformator::Matrix input_matrix = createMatrix(4, input_points.size());
-    Transformator::printMatrix(this->transformation_matrix);
+    // Transformator::printMatrix(this->transformation_matrix);
     // Map input to the matrix
     for(int column = 0; column < input_matrix[0].size(); column++){
         input_matrix[0][column] = input_points[column].x;
@@ -114,7 +114,7 @@ void Transformator::rotate(parser::Vec3f u, float angle){
     // 1)
     parser::Vec3f v;
     parser::Vec3f w;
-    
+
     // Form the first perpendicular vector
     if(std::abs(u.x) < this->floating_precision && std::abs(u.y) < this->floating_precision){
         // Avoid vanishing x-y parameters
@@ -126,7 +126,7 @@ void Transformator::rotate(parser::Vec3f u, float angle){
         v.y = -u.x;
         v.z = 0;
     }
-    
+
     // Form the second perpendicular vector
     w = MatOp::vectorCrossProduct(u, v);
 
@@ -134,7 +134,7 @@ void Transformator::rotate(parser::Vec3f u, float angle){
     u = MatOp::vectorNormalize(u);
     v = MatOp::vectorNormalize(v);
     w = MatOp::vectorNormalize(w);
-    
+
     // 2)
     Transformator::Matrix M = createMatrix(4, 4);
 
@@ -159,9 +159,9 @@ void Transformator::rotate(parser::Vec3f u, float angle){
     M[3][3] = 1;
 
     // Transformator::printMatrix(M);
-    
+
     Transformator::Matrix inv_M = createMatrix(4, 4);
-    
+
     inv_M[0][0] = u.x;
     inv_M[0][1] = v.x;
     inv_M[0][2] = w.x;
@@ -181,7 +181,7 @@ void Transformator::rotate(parser::Vec3f u, float angle){
     inv_M[3][1] = 0;
     inv_M[3][2] = 0;
     inv_M[3][3] = 1;
-    
+
     // 3)
     Transformator::Matrix R = createMatrix(4, 4);
 
@@ -226,9 +226,9 @@ void Transformator::scale(float x_scale, float y_scale, float z_scale){
 // Translation
 void Transformator::translate(parser::Vec3f offset){
     Transformator::Matrix translation_matrix = createMatrix(4, 4);
-    
+
     // std::cout << offset.x << std::endl;
-    
+
     // Form matrix
     translation_matrix[0][0] = 1;
     translation_matrix[1][1] = 1;
