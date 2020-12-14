@@ -238,9 +238,11 @@ parser::Vec3f ColorCalculator::computeColor(parser::Ray ray, IntersectionCalcula
             
             parser::Vec3f irradiance = computeLightContribution(point, (*y));
             parser::Vec3f diffuseContribution;
+            
             if(isReplaceAll){
                 diffuseContribution =  TexelColorConstant;
 
+                
             }else{
                 diffuseContribution = computeDiffuse(TexelColorConstant, intersection.normal, normalizedLightDirection, irradiance );
             }
@@ -253,8 +255,12 @@ parser::Vec3f ColorCalculator::computeColor(parser::Ray ray, IntersectionCalcula
             parser::Vec3f specularContribution = computeSpecular(materialID, intersection.normal, irradiance, normalizedHalfVector );
             pixelColor = MatOp::vectorAddition(specularContribution, pixelColor); // add specular contribution to the pixel color
         }
+        else if(isReplaceAll){
+            parser::Vec3f diffuseContribution;
+            diffuseContribution =  TexelColorConstant;
+            pixelColor = MatOp::vectorAddition(diffuseContribution, pixelColor); // add diffuse contribution to the pixel color
+        }
         else{
-            
             continue;
         }
         
