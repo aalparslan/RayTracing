@@ -88,7 +88,7 @@ std::pair<double, double> IntersectionCalculator::findSphereUandV(const parser::
 
 
     // Rotate et bakalim... :)
-    // vectorToPoint = SceneTransformations::rotateTextureVector(vectorToPoint, sphere.transformations, this->scene);
+    vectorToPoint = SceneTransformations::rotateTextureVector(vectorToPoint, sphere.transformations, this->scene);
 
 
     double teta = acos(vectorToPoint.y); // teta is in radians.
