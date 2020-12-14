@@ -134,48 +134,46 @@ parser::Vec3f ColorCalculator::CalculateTCC(int textureid,IntersectionCalculator
     if (u >= width) u--;
     v *= height;
     if (v >= height) v--;
-    parser::Vec3f color;
+    parser::Vec3f TColor;
     
     if (texture.interpolation == "nearest" || ((v * width * 3 + u * 3) + 3 + width * 3 > width*height*3)) {
         
-        const unsigned int pos = ((int)v) * width * 3 + ((int)u) * 3;
-        color.x = (*image)[pos];
-        color.y = (*image)[pos +1];
-        color.z = (*image)[pos +2];
+        const unsigned int position = ((int)v) * width * 3 + ((int)u) * 3;
+        TColor.x = (*image)[position];
+        TColor.y = (*image)[position +1];
+        TColor.z = (*image)[position +2];
     } else { //bilinear
         const unsigned int p = u;
         const unsigned int q = v;
         const float dx = u - p;
         const float dy = v - q;
-        const unsigned int pos = q * width * 3 + p * 3;
+        const unsigned int position = q * width * 3 + p * 3;
         
-        color.x = (*image)[pos] * (1 - dx) * (1 - dy);
-        color.x += (*image)[pos + 3] * (dx) * (1 - dy);
-        color.x += (*image)[pos + 3 + width * 3] * (dx) * (dy);
-        color.x += (*image)[pos + width * 3] * (1 - dx) * (dy);
-        
-        color.y = (*image)[pos + 1] * (1 - dx) * (1 - dy);
-        color.y += (*image)[pos + 3 + 1] * (dx) * (1 - dy);
-        color.y += (*image)[pos + 3 + width * 3 + 1] * (dx) * (dy);
-        color.y += (*image)[pos + width * 3 + 1] * (1 - dx) * (dy);
-        
-        color.z = (*image)[pos + 2] * (1 - dx) * (1 - dy);
-        color.z += (*image)[pos + 3 + 2] * (dx) * (1 - dy);
-        color.z += (*image)[pos + 3 + width * 3 + 2] * (dx) * (dy);
-        color.z += (*image)[pos + width * 3 + 2] * (1 - dx) * (dy);
+        TColor.x = (*image)[position] * (1 - dx) * (1 - dy);
+        TColor.x += (*image)[position + 3] * (dx) * (1 - dy);
+        TColor.x += (*image)[position + 3 + width * 3] * (dx) * (dy);
+        TColor.x += (*image)[position + width * 3] * (1 - dx) * (dy);
+        TColor.y = (*image)[position + 1] * (1 - dx) * (1 - dy);
+        TColor.y += (*image)[position + 3 + 1] * (dx) * (1 - dy);
+        TColor.y += (*image)[position + 3 + width * 3 + 1] * (dx) * (dy);
+        TColor.y += (*image)[position + width * 3 + 1] * (1 - dx) * (dy);
+        TColor.z = (*image)[position + 2] * (1 - dx) * (1 - dy);
+        TColor.z += (*image)[position + 3 + 2] * (dx) * (1 - dy);
+        TColor.z += (*image)[position + 3 + width * 3 + 2] * (dx) * (dy);
+        TColor.z += (*image)[position + width * 3 + 2] * (1 - dx) * (dy);
     }
     
     if(texture.decalMode == "replace_kd" || texture.decalMode == "blend_kd"){
-        color.x /= 255.;
-        color.y /= 255.;
-        color.z /= 255.;
+        TColor.x /= 255.;
+        TColor.y /= 255.;
+        TColor.z /= 255.;
     }
     
     if (texture.decalMode == "blend_kd"){
         
-        color = MatOp::vectorDivision(MatOp::vectorAddition(color, kd), 2.);
+        TColor = MatOp::vectorDivision(MatOp::vectorAddition(TColor, kd), 2.);
     }
-    return color;
+    return TColor;
     
 }
 
