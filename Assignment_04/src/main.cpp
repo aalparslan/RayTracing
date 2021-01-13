@@ -182,7 +182,7 @@ void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Inde
 
 }
 
-void initializeOPENGL(){
+void initializeOPENGL(int widthWindow, int heightWindow, int argc, char *argv[]){
   // TODO -> kanka burasi hata veriyorsa, __MACOS__ yerine baska bir sey olmasi gerekebilir
   #ifndef __MACOS__
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -196,6 +196,39 @@ void initializeOPENGL(){
   glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   /////////////////////////////////////////////////////////
   #endif
+
+  // Default ones...
+  if (argc != 3) {
+      printf("Please provide height and texture image files!\n");
+      exit(-1);
+  }
+
+  glfwSetErrorCallback(errorCallback);
+
+  if (!glfwInit()) {
+      exit(-1);
+  }
+
+  win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
+
+  if (!win) {
+      glfwTerminate();
+      exit(-1);
+  }
+  glfwMakeContextCurrent(win);
+
+
+  GLenum err = glewInit();
+  if (err != GLEW_OK) {
+      fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+
+      glfwTerminate();
+      exit(-1);
+  }
+
+  // Keyboard interrupts
+  glfwSetKeyCallback(win, keyCallback);
+
 }
 
 int main(int argc, char *argv[]) {
@@ -206,53 +239,18 @@ int main(int argc, char *argv[]) {
     int textureWidth, textureHeight;
     float heightFactor;
 
-
-    initializeOPENGL();
-
-    if (argc != 3) {
-        printf("Please provide height and texture image files!\n");
-        exit(-1);
-    }
-
-    glfwSetErrorCallback(errorCallback);
-
-    if (!glfwInit()) {
-        exit(-1);
-    }
-
     // TODO -> bu statik mi kalacak ya?
     int widthWindow  = 1000;
     int heightWindow = 500;
-    win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
 
-    if (!win) {
-        glfwTerminate();
-        exit(-1);
-    }
-    glfwMakeContextCurrent(win);
-
-
-
-    GLenum err = glewInit();
-    if (err != GLEW_OK) {
-        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-
-        glfwTerminate();
-        exit(-1);
-    }
+    // Initialize the opengl framework
+    initializeOPENGL(widthWindow, heightWindow, argc, argv);
 
     // From helper...
     initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
 
-
+    // Initialize all the remaining properties
     initialize(camera, textureWidth, textureHeight, indices, vertices);
-
-
-
-
-    glfwSetKeyCallback(win, keyCallback);
-
-
 
 
     while(!glfwWindowShouldClose(win)) {
