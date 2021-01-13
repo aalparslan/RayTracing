@@ -4,6 +4,9 @@
 #include "glm/gtx/transform.hpp"
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include <jpeglib.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <vector>
 
 using namespace std;
@@ -25,12 +28,17 @@ GLuint idIndexBuffer;
 
 //Camera initialCamera;
 struct Camera {
-    glm::vec3 position;
-    glm::vec3 gaze;
-    glm::vec3 up;
-    glm::vec3 left;
-
+  // Notice for this HW there is no need for up vector
+  // All references for the below variables are given w.r.t. (0, 0, 1)
+  glm::vec3 position;
+  // Angles in the assignment
+  // Store in radians!!!
+  float pitchAngle;
+  float yawAngle;
+  // Speed of the camera with no direction
+  float speed;
 };
+Camera camera;
 
 
 glm::vec3 lightPos;
@@ -57,17 +65,103 @@ struct Index {
 };
 
 
+// Basic logging for debug...
+// Just change to false to disable
+bool log_on = true;
+void log(string s){
+  if(log_on){
+    std::cout << s << std::endl;
+  }
+}
+
+void calculateCamera(const Camera &camera){
+  /*
+   * After called, GL_MODELVIEW will be the loaded!
+   * WARNING: THIS FUNCTION RESETS THE MODELVIEW MATRIX!
+  */
+  // Calculate the camera parameters using the camera properties
+  glm::vec3 lookAtVector = glm::normalize(glm::vec3(
+    // x
+    sin(camera.pitchAngle),
+    // y
+    sin(camera.yawAngle),
+    // z
+    cos(camera.pitchAngle)
+  ));
+
+  // set up mvp...
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  gluLookAt(
+    // Eye position
+    camera.position.x,
+    camera.position.y,
+    camera.position.z,
+    // Already calculated vector
+    lookAtVector.x,
+    lookAtVector.y,
+    lookAtVector.z,
+    // Up vector (constant for this assignment)
+    0.,
+    1.,
+    0.
+  );
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  // Below are given statically in the assignment text!
+  gluPerspective(
+    45.,
+    1.,
+    0.1,
+    1000
+  );
+  glMatrixMode(GL_MODELVIEW);
+}
+void initCamera(int textureWidth, int textureHeight, Camera &camera){
+  // The camera will be positioned initially at (w/2, w/10, -w/4) where w is the width of the texture image
+  camera.position = glm::vec3(textureWidth / 2.0, textureWidth / 10.0, - textureWidth / 4.0);
+  // Initial gaze
+  camera.pitchAngle = 0;
+  camera.yawAngle   = 0;
+  // Initial speed
+  camera.speed = 0;
+
+  calculateCamera(camera);
+}
+
 
 static void errorCallback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
 }
+static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods){
+  std::cout << "AAA" << std::endl;
 
-static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
+  /*
+   * Alttaki yerde sirayla bakiyoruz...
+   * OPENGL sebebiyle kamerayi local yapamiyoruz, global olmak zorunda :/
+   */
+
+  if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+  }else if(key == GLFW_KEY_W){
+    // Camera look up
+    camera.yawAngle = camera.yawAngle + 0.5;
+    calculateCamera(camera);
+  }else if(key == GLFW_KEY_S){
+    // Camera look down
+    camera.yawAngle = camera.yawAngle - 0.5;
+    calculateCamera(camera);
+  }else if(key == GLFW_KEY_A){
+    camera.pitchAngle = camera.pitchAngle - 0.5;
+    calculateCamera(camera);
+  }else if(key == GLFW_KEY_D){
+    camera.pitchAngle = camera.pitchAngle + 0.5;
+    calculateCamera(camera);
+  }
+
 }
+
 
 void initVerticesAndIndices(int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
     indices  = vector<Index>(2*textureWidth*textureHeight);
@@ -103,44 +197,7 @@ void initVerticesAndIndices(int textureWidth, int textureHeight, vector<Index> &
     }
 }
 
-void initCamera(int textureWidth, int textureHeight, Camera &camera){
-    // The camera will be positioned initially at (w/2, w/10, -w/4) where w is the width of the texture image
-    camera.position = glm::vec3(textureWidth / 2.0, textureWidth / 10.0, - textureWidth / 4.0);
-    // Initial gaze
-    camera.gaze     = glm::vec3(0.0, 0.0, 1.0);
-    camera.up       = glm::vec3(0.0, 1.0, 0.0);
 
-    // set up mvp...
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(
-      // Eye position
-      camera.position.x,
-      camera.position.y,
-      camera.position.z,
-      // Reference point position
-      camera.gaze.x - camera.position.x,
-      camera.gaze.y - camera.position.y,
-      camera.gaze.z - camera.position.z,
-      // Up vector
-      camera.up.x,
-      camera.up.y,
-      camera.up.z
-    );
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(
-      60.,
-      (float) textureWidth / textureHeight,
-      1,
-      1000
-    );
-    glMatrixMode(GL_MODELVIEW);
-
-
-
-
-}
 
 void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
 
@@ -158,7 +215,7 @@ void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Inde
     // string vertexShader = "src/shaders/shader.vert";
     // string fragmentShader = "src/shaders/shader.frag";
     // initShaders(idProgramShader, vertexShader , fragmentShader );
-
+    // glUseProgram(idProgramShader);
 
     // 4) Initialize the GPU memory
     GLuint VAO;
@@ -178,7 +235,6 @@ void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Inde
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 1, GL_V2F, GL_FALSE, sizeof(glm::vec3) + sizeof(glm::vec2), (void *) (3 * sizeof(glm::vec3)));
     glEnableVertexAttribArray(1);
-    glUseProgram(idProgramShader);
 
 }
 
@@ -235,7 +291,7 @@ int main(int argc, char *argv[]) {
     vector<Index> indices;
     vector<Vertex> vertices;
 
-    Camera camera;
+
     int textureWidth, textureHeight;
     float heightFactor;
 
@@ -254,12 +310,20 @@ int main(int argc, char *argv[]) {
 
 
     while(!glfwWindowShouldClose(win)) {
-      glBegin(GL_TRIANGLES);
-      glColor3f(0.7, 0.7, 0.7);
-      glVertex3f(  0.,0.,  0.);
-      glVertex3f(200.,0.,  0.);
-      glVertex3f(100.,0.,100.);
-      glEnd();
+      // Kanka burda sanirim glDrawElements gibi bir sey olacak ama o kismi cozemedim, bakabilir misin?
+      // glDrawElements(GL_TRIANGLES, numTriangles[1]*3, GL_UNSIGNED_INT,(GLvoid *)(sizeof(GLuint)*numTriangles[0]*3));
+
+
+      {
+        // BUNLAR GECICI TEST ICIN
+        glBegin(GL_TRIANGLES);
+        glColor3f(0.7, 0.7, 0.7);
+        glVertex3f(  0.,0.,  0.);
+        glVertex3f(200.,0.,  0.);
+        glVertex3f(100.,0.,100.);
+        glEnd();
+      }
+
 
       glfwSwapBuffers(win);
       glfwPollEvents();
