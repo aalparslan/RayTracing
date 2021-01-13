@@ -56,8 +56,7 @@ struct Index {
     glm::vec3 pos;
 };
 
-vector<Index> indices;
-vector<Vertex> vertices;
+
 
 static void errorCallback(int error, const char* description)
 {
@@ -71,8 +70,10 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 }
 
 void initVerticesAndIndices(int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
+    indices  = vector<Index>(2*textureWidth*textureHeight);
+    vertices = vector<Vertex>(2*textureWidth*textureHeight);
 
-    // initialize indices
+    // Calculate the data
     int k = 0;
     for(int i = 0; i < textureHeight; i++){
         for(int j = 0; j < textureWidth; j++){
@@ -144,9 +145,9 @@ void initCamera(int textureWidth, int textureHeight, Camera &camera){
 void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
 
     // initizalize shaders with idProgramShader
-    string vertexShader = "src/shaders/shader.vert";
-    string fragmentShader = "src/shaders/shader.frag";
-    initShaders(idProgramShader, vertexShader , fragmentShader );
+    // string vertexShader = "src/shaders/shader.vert";
+    // string fragmentShader = "src/shaders/shader.frag";
+    // initShaders(idProgramShader, vertexShader , fragmentShader );
 
 
     //create a VAO
@@ -179,12 +180,31 @@ void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Inde
 
 }
 
+void initializeOPENGL(){
+  // TODO -> kanka burasi hata veriyorsa, __MACOS__ yerine baska bir sey olmasi gerekebilir
+  #ifndef __MACOS__
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+
+ // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE); // This is required for remote
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE); // This might be used for local
+
+
+  /// TRADITIONAL  MacOS FLAGS TRY TO REMOVE THEM LATER ON...
+  glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+  glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  /////////////////////////////////////////////////////////
+  #endif
+}
+
 int main(int argc, char *argv[]) {
+    vector<Index> indices;
+    vector<Vertex> vertices;
 
     Camera camera;
     int textureWidth, textureHeight;
     float heightFactor;
-    int widthWindow = 1000, heightWindow = 1000;
+
 
 
 
@@ -199,18 +219,9 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-
-   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE); // This is required for remote
-     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE); // This might be used for local
-
-
-    /// TRADITIONAL  MacOS FLAGS TRY TO REMOVE THEM LATER ON...
-    glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    /////////////////////////////////////////////////////////
-
+    // TODO -> bu statik mi kalacak ya?
+    int widthWindow  = 1000;
+    int heightWindow = 500;
     win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
 
     if (!win) {
@@ -218,6 +229,14 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
     glfwMakeContextCurrent(win);
+
+    // From helper...
+    initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
+
+
+    initialize(camera, textureWidth, textureHeight, indices, vertices);
+
+
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -227,10 +246,33 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
 
-    initialize(camera, textureWidth, textureHeight, indices, vertices);
-
+    // set up mvp...
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(
+      // Eye position
+      0,
+      0,
+      -10,
+      // Reference point position
+      0,
+      0,
+      0,
+      // Up vector
+      0,
+      1,
+      0
+    );
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluPerspective(
+      60.,
+      (float) widthWindow / heightWindow,
+      1,
+      1000
+    );
+    glMatrixMode(GL_MODELVIEW);
 
 
     glfwSetKeyCallback(win, keyCallback);
@@ -239,8 +281,15 @@ int main(int argc, char *argv[]) {
 
 
     while(!glfwWindowShouldClose(win)) {
-        glfwSwapBuffers(win);
-        glfwPollEvents();
+      glBegin(GL_TRIANGLES);
+      glColor3f(0.7, 0.7, 0.7);
+      glVertex3f(  0.,  0.,  0.);
+      glVertex3f(200.,  0.,  0.);
+      glVertex3f(100.,100.,  0.);
+      glEnd();
+
+      glfwSwapBuffers(win);
+      glfwPollEvents();
     }
 
 

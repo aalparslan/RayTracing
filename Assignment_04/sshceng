@@ -1,0 +1,2 @@
+ssh -p 8085 e2166387@login.ceng.metu.edu.tr -L 2222:inek16:22 -fN
+ssh -p 2222 e2166387@localhost -X -Y
