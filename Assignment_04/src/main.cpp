@@ -73,10 +73,11 @@ struct Index {
 
 
 
-void calculateCamera(const Camera &camera){
+void calculateCamera(Camera &camera){
   /*
    * After called, GL_MODELVIEW will be the loaded!
    * WARNING: THIS FUNCTION RESETS THE MODELVIEW MATRIX!
+   * This calculates the next position of the camera.
   */
   // Calculate the camera parameters using the camera properties
   glm::vec3 gazeVector = glm::normalize(glm::vec3(
@@ -89,7 +90,7 @@ void calculateCamera(const Camera &camera){
   ));
 
   // Calculate the camera position in time
-  // TODO...
+  camera.position = camera.position + camera.speed * gazeVector;
 
   // set up mvp...
   glMatrixMode(GL_MODELVIEW);
@@ -147,20 +148,24 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
   }else if(key == GLFW_KEY_A){
     // Camera look up
     camera.yawAngle = camera.yawAngle + 0.05;
-    calculateCamera(camera);
+    // calculateCamera(camera);
   }else if(key == GLFW_KEY_D){
     // Camera look down
     camera.yawAngle = camera.yawAngle - 0.05;
-    calculateCamera(camera);
+    // calculateCamera(camera);
   }else if(key == GLFW_KEY_S){
     camera.pitchAngle = camera.pitchAngle - 0.05;
-    calculateCamera(camera);
+    // calculateCamera(camera);
   }else if(key == GLFW_KEY_W){
     camera.pitchAngle = camera.pitchAngle + 0.05;
-    calculateCamera(camera);
+    // calculateCamera(camera);
   }else if(key == GLFW_KEY_I){
     initCamera(textureWidth, textureHeight, camera);
-  }else if(key == GLFW_KEY_P && action == GLFW_PRESS){
+  }else if(key == GLFW_KEY_Y){
+    camera.speed += 0.01;
+  }else if(key == GLFW_KEY_H){
+    camera.speed -= 0.01;
+  }else if(key == GLFW_KEY_P){
     if(!fullScreenMode){
       // Do not forget to store the current view!
       glfwGetWindowPos(window, &windowModeXStart, &windowModeYStart);
@@ -181,7 +186,6 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
       // Set back!
       glfwSetWindowMonitor(window, NULL, windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize, 0);
     }
-
   }
 
 }
@@ -362,6 +366,9 @@ int main(int argc, char *argv[]) {
       glfwGetFramebufferSize(win, &width, &height);
       // Set the rendering size
       glViewport(0, 0, width, height);
+
+      //// Calculate the camera
+      calculateCamera(camera);
 
       //// Sadece denemek icin
       denemeUcgenler();
