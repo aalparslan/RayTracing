@@ -65,14 +65,7 @@ struct Index {
 };
 
 
-// Basic logging for debug...
-// Just change to false to disable
-bool log_on = true;
-void log(string s){
-  if(log_on){
-    std::cout << s << std::endl;
-  }
-}
+
 
 void calculateCamera(const Camera &camera){
   /*
@@ -80,14 +73,20 @@ void calculateCamera(const Camera &camera){
    * WARNING: THIS FUNCTION RESETS THE MODELVIEW MATRIX!
   */
   // Calculate the camera parameters using the camera properties
-  glm::vec3 lookAtVector = glm::normalize(glm::vec3(
+  glm::vec3 gazeVector = glm::normalize(glm::vec3(
     // x
-    sin(camera.pitchAngle),
+    cos(camera.pitchAngle)*sin(camera.yawAngle),
     // y
-    sin(camera.yawAngle),
+    sin(camera.pitchAngle),
     // z
-    cos(camera.pitchAngle)
+    cos(camera.pitchAngle)*cos(camera.yawAngle)
   ));
+
+  cout << "DENEME" << endl;
+  cout << gazeVector.x << endl;
+  cout << gazeVector.y << endl;
+  cout << gazeVector.z << endl;
+
 
   // set up mvp...
   glMatrixMode(GL_MODELVIEW);
@@ -98,9 +97,9 @@ void calculateCamera(const Camera &camera){
     camera.position.y,
     camera.position.z,
     // Already calculated vector
-    lookAtVector.x,
-    lookAtVector.y,
-    lookAtVector.z,
+    camera.position.x + gazeVector.x,
+    camera.position.y + gazeVector.y,
+    camera.position.z + gazeVector.z,
     // Up vector (constant for this assignment)
     0.,
     1.,
@@ -146,17 +145,17 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
     glfwSetWindowShouldClose(window, GLFW_TRUE);
   }else if(key == GLFW_KEY_W){
     // Camera look up
-    camera.yawAngle = camera.yawAngle + 0.5;
+    camera.yawAngle = camera.yawAngle + 0.05;
     calculateCamera(camera);
   }else if(key == GLFW_KEY_S){
     // Camera look down
-    camera.yawAngle = camera.yawAngle - 0.5;
+    camera.yawAngle = camera.yawAngle - 0.05;
     calculateCamera(camera);
   }else if(key == GLFW_KEY_A){
-    camera.pitchAngle = camera.pitchAngle - 0.5;
+    camera.pitchAngle = camera.pitchAngle - 0.05;
     calculateCamera(camera);
   }else if(key == GLFW_KEY_D){
-    camera.pitchAngle = camera.pitchAngle + 0.5;
+    camera.pitchAngle = camera.pitchAngle + 0.05;
     calculateCamera(camera);
   }
 
@@ -313,14 +312,16 @@ int main(int argc, char *argv[]) {
       // Kanka burda sanirim glDrawElements gibi bir sey olacak ama o kismi cozemedim, bakabilir misin?
       // glDrawElements(GL_TRIANGLES, numTriangles[1]*3, GL_UNSIGNED_INT,(GLvoid *)(sizeof(GLuint)*numTriangles[0]*3));
 
+      // Clear the view!
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       {
         // BUNLAR GECICI TEST ICIN
         glBegin(GL_TRIANGLES);
         glColor3f(0.7, 0.7, 0.7);
-        glVertex3f(  0.,0.,  0.);
-        glVertex3f(200.,0.,  0.);
-        glVertex3f(100.,0.,100.);
+        glVertex3f(  500.,100., 0.);
+        glVertex3f(2000.,100.,  0.);
+        glVertex3f(500.,2000.,0.);
         glEnd();
       }
 
