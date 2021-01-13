@@ -119,9 +119,9 @@ void initCamera(int textureWidth, int textureHeight, Camera &camera){
       camera.position.y,
       camera.position.z,
       // Reference point position
-      camera.gaze.x,
-      camera.gaze.y,
-      camera.gaze.z,
+      camera.gaze.x - camera.position.x,
+      camera.gaze.y - camera.position.y,
+      camera.gaze.z - camera.position.z,
       // Up vector
       camera.up.x,
       camera.up.y,
@@ -144,18 +144,26 @@ void initCamera(int textureWidth, int textureHeight, Camera &camera){
 
 void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
 
-    // initizalize shaders with idProgramShader
+    // 1) Initialize the vertices/indices
+    initVerticesAndIndices(textureWidth, textureHeight, indices, vertices);
+
+
+    // 2) Initialize the camera
+    initCamera(textureWidth, textureHeight, camera);
+
+
+    // 3) Initialize the shaders
+    // Initizalize shaders with idProgramShader
+    // TODO - Bunu da init etmek gerekiyor
     // string vertexShader = "src/shaders/shader.vert";
     // string fragmentShader = "src/shaders/shader.frag";
     // initShaders(idProgramShader, vertexShader , fragmentShader );
 
 
-    //create a VAO
+    // 4) Initialize the GPU memory
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-
-    initVerticesAndIndices(textureWidth, textureHeight, indices, vertices);
 
     //Create vbo for vertices
     glGenBuffers(1, &idVertexBuffer);
@@ -171,12 +179,6 @@ void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Inde
     glVertexAttribPointer(0, 1, GL_V2F, GL_FALSE, sizeof(glm::vec3) + sizeof(glm::vec2), (void *) (3 * sizeof(glm::vec3)));
     glEnableVertexAttribArray(1);
     glUseProgram(idProgramShader);
-    initCamera(textureWidth, textureHeight, camera);
-
-
-
-
-
 
 }
 
@@ -186,8 +188,7 @@ void initializeOPENGL(){
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 
- // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE); // This is required for remote
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE); // This might be used for local
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 
 
   /// TRADITIONAL  MacOS FLAGS TRY TO REMOVE THEM LATER ON...
@@ -206,7 +207,7 @@ int main(int argc, char *argv[]) {
     float heightFactor;
 
 
-
+    initializeOPENGL();
 
     if (argc != 3) {
         printf("Please provide height and texture image files!\n");
@@ -230,12 +231,6 @@ int main(int argc, char *argv[]) {
     }
     glfwMakeContextCurrent(win);
 
-    // From helper...
-    initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
-
-
-    initialize(camera, textureWidth, textureHeight, indices, vertices);
-
 
 
     GLenum err = glewInit();
@@ -246,33 +241,13 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
+    // From helper...
+    initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
 
-    // set up mvp...
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(
-      // Eye position
-      0,
-      0,
-      -10,
-      // Reference point position
-      0,
-      0,
-      0,
-      // Up vector
-      0,
-      1,
-      0
-    );
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(
-      60.,
-      (float) widthWindow / heightWindow,
-      1,
-      1000
-    );
-    glMatrixMode(GL_MODELVIEW);
+
+    initialize(camera, textureWidth, textureHeight, indices, vertices);
+
+
 
 
     glfwSetKeyCallback(win, keyCallback);
@@ -283,9 +258,9 @@ int main(int argc, char *argv[]) {
     while(!glfwWindowShouldClose(win)) {
       glBegin(GL_TRIANGLES);
       glColor3f(0.7, 0.7, 0.7);
-      glVertex3f(  0.,  0.,  0.);
-      glVertex3f(200.,  0.,  0.);
-      glVertex3f(100.,100.,  0.);
+      glVertex3f(  0.,0.,  0.);
+      glVertex3f(200.,0.,  0.);
+      glVertex3f(100.,0.,100.);
       glEnd();
 
       glfwSwapBuffers(win);
