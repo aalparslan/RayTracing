@@ -40,6 +40,12 @@ struct Camera {
 };
 Camera camera;
 
+// Properties
+int textureWidth, textureHeight;
+// Hold if currently full screen or not
+bool fullScreenMode = false;
+// Hold the previous size of the window!
+int windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize;
 
 glm::vec3 lightPos;
 GLuint depthMapFBO;
@@ -82,11 +88,8 @@ void calculateCamera(const Camera &camera){
     cos(camera.pitchAngle)*cos(camera.yawAngle)
   ));
 
-  cout << "DENEME" << endl;
-  cout << gazeVector.x << endl;
-  cout << gazeVector.y << endl;
-  cout << gazeVector.z << endl;
-
+  // Calculate the camera position in time
+  // TODO...
 
   // set up mvp...
   glMatrixMode(GL_MODELVIEW);
@@ -134,8 +137,6 @@ static void errorCallback(int error, const char* description)
     fprintf(stderr, "Error: %s\n", description);
 }
 static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods){
-  std::cout << "AAA" << std::endl;
-
   /*
    * Alttaki yerde sirayla bakiyoruz...
    * OPENGL sebebiyle kamerayi local yapamiyoruz, global olmak zorunda :/
@@ -143,20 +144,44 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
   if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
     glfwSetWindowShouldClose(window, GLFW_TRUE);
-  }else if(key == GLFW_KEY_W){
+  }else if(key == GLFW_KEY_A){
     // Camera look up
     camera.yawAngle = camera.yawAngle + 0.05;
     calculateCamera(camera);
-  }else if(key == GLFW_KEY_S){
+  }else if(key == GLFW_KEY_D){
     // Camera look down
     camera.yawAngle = camera.yawAngle - 0.05;
     calculateCamera(camera);
-  }else if(key == GLFW_KEY_A){
+  }else if(key == GLFW_KEY_S){
     camera.pitchAngle = camera.pitchAngle - 0.05;
     calculateCamera(camera);
-  }else if(key == GLFW_KEY_D){
+  }else if(key == GLFW_KEY_W){
     camera.pitchAngle = camera.pitchAngle + 0.05;
     calculateCamera(camera);
+  }else if(key == GLFW_KEY_I){
+    initCamera(textureWidth, textureHeight, camera);
+  }else if(key == GLFW_KEY_P && action == GLFW_PRESS){
+    if(!fullScreenMode){
+      // Do not forget to store the current view!
+      glfwGetWindowPos(window, &windowModeXStart, &windowModeYStart);
+      glfwGetWindowSize(window, &windowModeXSize, &windowModeYSize);
+
+      fullScreenMode = true;
+
+
+      // Get the video mode
+      const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+      // Set the window to the expected mode!
+      glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, videoMode->width, videoMode->height, 0);
+    }else{
+      // Set windowed operation flag
+      fullScreenMode = false;
+
+      // Set back!
+      glfwSetWindowMonitor(window, NULL, windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize, 0);
+    }
+
   }
 
 }
@@ -285,13 +310,28 @@ void initializeOPENGL(int widthWindow, int heightWindow, int argc, char *argv[])
   glfwSetKeyCallback(win, keyCallback);
 
 }
+void denemeUcgenler(){
+  // BUNLAR GECICI TEST ICIN
+  glBegin(GL_TRIANGLES);
+  glColor3f(0.9, 0.0, 0.0);
+  glVertex3f(500.,100., 0.);
+  glVertex3f(600.,100., 0.);
+  glVertex3f(500.,200.,0.);
+  glEnd();
 
+  glBegin(GL_TRIANGLES);
+  glColor3f(0., 0.7, 0.);
+  glVertex3f(500., 0., 100.);
+  glVertex3f(600., 0., 100.);
+  glVertex3f(500., 0., 600.);
+  glEnd();
+}
 int main(int argc, char *argv[]) {
     vector<Index> indices;
     vector<Vertex> vertices;
 
 
-    int textureWidth, textureHeight;
+
     float heightFactor;
 
     // TODO -> bu statik mi kalacak ya?
@@ -312,18 +352,19 @@ int main(int argc, char *argv[]) {
       // Kanka burda sanirim glDrawElements gibi bir sey olacak ama o kismi cozemedim, bakabilir misin?
       // glDrawElements(GL_TRIANGLES, numTriangles[1]*3, GL_UNSIGNED_INT,(GLvoid *)(sizeof(GLuint)*numTriangles[0]*3));
 
-      // Clear the view!
+      //// Clear the view!
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-      {
-        // BUNLAR GECICI TEST ICIN
-        glBegin(GL_TRIANGLES);
-        glColor3f(0.7, 0.7, 0.7);
-        glVertex3f(  500.,100., 0.);
-        glVertex3f(2000.,100.,  0.);
-        glVertex3f(500.,2000.,0.);
-        glEnd();
-      }
+      //// Sizing the view
+      int height;
+      int width;
+      // Get current size
+      glfwGetFramebufferSize(win, &width, &height);
+      // Set the rendering size
+      glViewport(0, 0, width, height);
+
+      //// Sadece denemek icin
+      denemeUcgenler();
 
 
       glfwSwapBuffers(win);
