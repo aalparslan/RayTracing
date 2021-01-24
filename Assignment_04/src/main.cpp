@@ -1,16 +1,13 @@
-#include "helper.hpp"
-//#include "solution.h"
-#include "glm/glm.hpp"
-#include "glm/gtx/transform.hpp"
-#include "glm/gtx/rotate_vector.hpp"
-#include "glm/gtc/type_ptr.hpp"
-#include <jpeglib.h>
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <glm/ext.hpp>
 #include <vector>
+#include "helper.h"
 
 using namespace std;
+
 static GLFWwindow* win = NULL;
+int widthWindow  = 1000;
+int heightWindow = 1000;
 
 // Shaders
 GLuint idProgramShader;
@@ -24,33 +21,33 @@ GLuint idMVPMatrix;
 GLuint idVertexBuffer;
 GLuint idIndexBuffer;
 
+struct Vertex {
+    //vertex pos
+    glm::vec3 vPosition;
+    // texture pos
+    glm::vec2 textureCoordinate;
+    //normal
+    glm::vec3 normal;
+    
+};
 
+int widthTexture, heightTexture;
 
 //Camera initialCamera;
 struct Camera {
-  // Notice for this HW there is no need for up vector
-  // All references for the below variables are given w.r.t. (0, 0, 1)
-  glm::vec3 position;
-  // Angles in the assignment
-  // Store in radians!!!
-  float pitchAngle;
-  float yawAngle;
-  // Speed of the camera with no direction
-  float speed;
+    // Notice for this HW there is no need for up vector
+    // All references for the below variables are given w.r.t. (0, 0, 1)
+    glm::vec3 gaze;
+    glm::vec3 up;
+    glm::vec3 position;
+    // Angles in the assignment
+    // Store in radians!!!
+    float pitchAngle;
+    float yawAngle;
+    // Speed of the camera with no direction
+    float speed;
 };
 Camera camera;
-
-// Properties
-int textureWidth, textureHeight;
-// Hold if currently full screen or not
-bool fullScreenMode = false;
-// Hold the previous size of the window!
-int windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize;
-
-glm::vec3 lightPos;
-GLuint depthMapFBO;
-GLuint depthCubemap;
-bool lightPosFlag = false;
 
 // matrices
 glm::mat4 MVP;
@@ -58,327 +55,298 @@ glm::mat4 Model;
 glm::mat4 View;
 glm::mat4 Projection;
 
-struct Vertex {
-    //vertex pos
-    glm::vec3 vPosition;
-    // texture pos
-    glm::vec2 tPosition;
 
-};
+glm::vec3 lightPosition;
 
-struct Index {
-    glm::vec3 pos;
-};
+// locations
+int locTextureHeight, locTextureWidth, locTexture, locMVP, locHeightFactor, locCameraPosition, locLightPosition;
 
+// Hold if currently full screen or not
+bool fullScreenMode = false;
+bool initGeo = false;
+// Hold the previous size of the window!
+int windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize;
 
+void calculateCamera(vector<int> &indices, float &heightFactor, float &aspectRatio, float &nearPlane, float &farPlane,  float &YfieldOfView){
+    /*
+     * After called, GL_MODELVIEW will be the loaded!
+     * WARNING: THIS FUNCTION RESETS THE MODELVIEW MATRIX!
+     * This calculates the next position of the camera.
+     */
+    // Calculate the camera parameters using the camera properties
+    glClearColor(0,0,0,1);
+    glClearDepth(1.0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    camera.gaze = glm::normalize(glm::vec3(
+                                                    // x
+                                                    cos(glm::radians(camera.pitchAngle))*cos(glm::radians(camera.yawAngle)),
+                                                    // y
+                                                    sin(glm::radians(camera.pitchAngle - 45.0) ), ///check
+                                                    // z
+                                                    cos(glm::radians(camera.pitchAngle))*sin(glm::radians(camera.yawAngle))
+                                                    ));
+    
+    // Calculate the camera position in time
+    camera.position = camera.position + camera.speed * camera.gaze;
+    
+    View = glm::lookAt(camera.position, camera.position + camera.gaze, camera.up);
+    Projection = glm::perspective(YfieldOfView, aspectRatio, nearPlane, farPlane);
+    MVP = Projection * View * Model;
 
-
-void calculateCamera(Camera &camera){
-  /*
-   * After called, GL_MODELVIEW will be the loaded!
-   * WARNING: THIS FUNCTION RESETS THE MODELVIEW MATRIX!
-   * This calculates the next position of the camera.
-  */
-  // Calculate the camera parameters using the camera properties
-  glm::vec3 gazeVector = glm::normalize(glm::vec3(
-    // x
-    cos(camera.pitchAngle)*sin(camera.yawAngle),
-    // y
-    sin(camera.pitchAngle),
-    // z
-    cos(camera.pitchAngle)*cos(camera.yawAngle)
-  ));
-
-  // Calculate the camera position in time
-  camera.position = camera.position + camera.speed * gazeVector;
-
-  // set up mvp...
-  glMatrixMode(GL_MODELVIEW);
-  glLoadIdentity();
-  gluLookAt(
-    // Eye position
-    camera.position.x,
-    camera.position.y,
-    camera.position.z,
-    // Already calculated vector
-    camera.position.x + gazeVector.x,
-    camera.position.y + gazeVector.y,
-    camera.position.z + gazeVector.z,
-    // Up vector (constant for this assignment)
-    0.,
-    1.,
-    0.
-  );
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  // Below are given statically in the assignment text!
-  gluPerspective(
-    45.,
-    1.,
-    0.1,
-    1000
-  );
-  glMatrixMode(GL_MODELVIEW);
-}
-void initCamera(int textureWidth, int textureHeight, Camera &camera){
-  // The camera will be positioned initially at (w/2, w/10, -w/4) where w is the width of the texture image
-  camera.position = glm::vec3(textureWidth / 2.0, textureWidth / 10.0, - textureWidth / 4.0);
-  // Initial gaze
-  camera.pitchAngle = 0;
-  camera.yawAngle   = 0;
-  // Initial speed
-  camera.speed = 0;
-
-  calculateCamera(camera);
+    // Send new geometry to OpenGL
+    glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
+    glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
+    
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+    
 }
 
+
+
+void initGeometry(float &heightFactor, float &aspectRatio, float &nearPlane, float &farPlane,  float &YfieldOfView){
+    // The camera will be positioned initially at (w/2, w/10, -w/4) where w is the width of the texture image
+    camera.position = glm::vec3(widthTexture / 2.0, widthTexture / 10.0, - widthTexture / 4.0);
+    camera.gaze = glm::vec3(0.0, 0.0, 0.1);
+    camera.up = glm::vec3(0.0, 1.0, 0.0);
+
+    //init mvp
+    Model = glm::mat4(1.0);
+    View = glm::lookAt(camera.position, camera.position + camera.gaze, camera.up);
+    Projection = glm::perspective(YfieldOfView, aspectRatio, nearPlane, farPlane);
+    MVP = Projection * View * Model;
+
+    // initialize light as specified in the pdf.
+    lightPosition = glm::vec3(widthTexture/ 2.0, 100, heightTexture / 2.0);
+    // Initial gaze
+    camera.pitchAngle = 45.0;
+    camera.yawAngle   = 90.0;
+
+    // Initial speed
+    camera.speed = 0;
+
+    heightFactor = 10;
+}
 
 static void errorCallback(int error, const char* description)
 {
     fprintf(stderr, "Error: %s\n", description);
 }
 static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods){
-  /*
-   * Alttaki yerde sirayla bakiyoruz...
-   * OPENGL sebebiyle kamerayi local yapamiyoruz, global olmak zorunda :/
-   */
+    /*
+     * Alttaki yerde sirayla bakiyoruz...
+     * OPENGL sebebiyle kamerayi local yapamiyoruz, global olmak zorunda :/
+     */
 
-  if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
-  }else if(key == GLFW_KEY_A){
-    // Camera look up
-    camera.yawAngle = camera.yawAngle + 0.05;
-    // calculateCamera(camera);
-  }else if(key == GLFW_KEY_D){
-    // Camera look down
-    camera.yawAngle = camera.yawAngle - 0.05;
-    // calculateCamera(camera);
-  }else if(key == GLFW_KEY_S){
-    camera.pitchAngle = camera.pitchAngle - 0.05;
-    // calculateCamera(camera);
-  }else if(key == GLFW_KEY_W){
-    camera.pitchAngle = camera.pitchAngle + 0.05;
-    // calculateCamera(camera);
-  }else if(key == GLFW_KEY_I){
-    initCamera(textureWidth, textureHeight, camera);
-  }else if(key == GLFW_KEY_Y){
-    camera.speed += 0.01;
-  }else if(key == GLFW_KEY_H){
-    camera.speed -= 0.01;
-  }else if(key == GLFW_KEY_P){
-    if(!fullScreenMode){
-      // Do not forget to store the current view!
-      glfwGetWindowPos(window, &windowModeXStart, &windowModeYStart);
-      glfwGetWindowSize(window, &windowModeXSize, &windowModeYSize);
+    if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }else if(key == GLFW_KEY_A){
+        // Camera look up
+        camera.yawAngle = camera.yawAngle + 0.05;
+        // calculateCamera(camera);
+    }else if(key == GLFW_KEY_D){
+        // Camera look down
+        camera.yawAngle = camera.yawAngle - 0.05;
+        // calculateCamera(camera);
+    }else if(key == GLFW_KEY_S){
+        camera.pitchAngle = camera.pitchAngle - 0.05;
+        // calculateCamera(camera);
+    }else if(key == GLFW_KEY_W){
+        camera.pitchAngle = camera.pitchAngle + 0.05;
+        // calculateCamera(camera);
+    }else if(key == GLFW_KEY_I){
+        initGeo = true;
+    }else if(key == GLFW_KEY_Y){
+        camera.speed += 0.01;
+    }else if(key == GLFW_KEY_H){
+        camera.speed -= 0.01;
+    }else if(key == GLFW_KEY_P){
+        if(!fullScreenMode){
+            // Do not forget to store the current view!
+            glfwGetWindowPos(window, &windowModeXStart, &windowModeYStart);
+            glfwGetWindowSize(window, &windowModeXSize, &windowModeYSize);
 
-      fullScreenMode = true;
+            fullScreenMode = true;
 
+            // Get the video mode
+            const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-      // Get the video mode
-      const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            // Set the window to the expected mode!
+            glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, videoMode->width, videoMode->height, 0);
+        }else{
+            // Set windowed operation flag
+            fullScreenMode = false;
 
-      // Set the window to the expected mode!
-      glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, videoMode->width, videoMode->height, 0);
-    }else{
-      // Set windowed operation flag
-      fullScreenMode = false;
-
-      // Set back!
-      glfwSetWindowMonitor(window, NULL, windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize, 0);
-    }
-  }
-
-}
-
-
-void initVerticesAndIndices(int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
-    indices  = vector<Index>(2*textureWidth*textureHeight);
-    vertices = vector<Vertex>(2*textureWidth*textureHeight);
-
-    // Calculate the data
-    int k = 0;
-    for(int i = 0; i < textureHeight; i++){
-        for(int j = 0; j < textureWidth; j++){
-
-            // triangle1 in pixel
-            // left upperside, left lowerside,  right upperside
-            glm::vec3 indice1 = glm::vec3(i*textureWidth + j,(i+1)*textureWidth + j,i*textureWidth + j + 1);
-            //triangle2
-            //left lowerside, right lowerside, right upperside
-            glm::vec3 indice2 = glm::vec3((i+1)*textureWidth + j,(i+1)*textureWidth + j+1,i*textureWidth + j + 1);
-
-            indices[k].pos = indice1;
-            k++;
-            indices[k].pos = indice2;
-            k++;
-
-
-            // initialize vertices
-            // x,y,z
-            glm::vec3 vPosition = glm::vec3(j,0.0,i);
-            // u,v
-            glm::vec2 tPosition = glm::vec2(1 - ((float) j)/textureWidth , 1 - ((float) i)/textureHeight);
-
-            vertices[i*textureWidth + j].vPosition = vPosition;
-            vertices[i*textureWidth + j].tPosition = tPosition;
+            // Set back!
+            glfwSetWindowMonitor(window, NULL, windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize, 0);
         }
     }
 }
 
+void initVerticesAndIndices(    vector<int> &indices,
+                            vector<Vertex> &vertices){
+    // initiate indices
+
+    for(int i = 1; i < heightTexture+1; i++){
+        for(int j = 1; j < widthTexture+1; j++){
+
+            if(((i)*widthTexture + j + 1) % (widthTexture +1) == 0){
+                continue;
+            }
+            indices.push_back((i-1)*widthTexture + j-1);
+            indices.push_back((i)*widthTexture + j );
+            indices.push_back((i-1)*widthTexture + j);
+
+            indices.push_back((i-1)*widthTexture + j );
+            indices.push_back((i)*widthTexture + j );
+            indices.push_back((i)*widthTexture + j + 1);
+
+        }
+    }
+
+   //  initiate vertices
+    for(int i = 0; i < heightTexture+1; i++){
+        for(int j = 0; j < widthTexture+1; j++){
+            Vertex v;
+            v.vPosition = glm::vec3(j, 0.0, i);
+            v.normal = glm::vec3(0.0); // vertex shader will calculate normal
+            v.textureCoordinate = glm::vec2(1 - ( ((float) j) / widthTexture ), 1 - (((float) i) / heightTexture) );
+            vertices.push_back(v);
+        }
+    }
+}
+
+// uniforms are initialized below for shaders' usage
+void initializeUniforms( float &heightFactor){
+    
+    locMVP = glGetUniformLocation(idProgramShader, "MVP");
+    glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
+    locHeightFactor = glGetUniformLocation(idProgramShader,"heightFactor");
+    glUniform1f(locHeightFactor, heightFactor);
+    locTextureHeight = glGetUniformLocation(idProgramShader,"heightTexture");
+    glUniform1i(locTextureHeight, heightTexture);
+    locTextureWidth = glGetUniformLocation(idProgramShader,"widthTexture");
+    glUniform1i(locTextureWidth, widthTexture);
+    locCameraPosition = glGetUniformLocation(idProgramShader,"cameraPos");
+    glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
+    locLightPosition = glGetUniformLocation(idProgramShader, "lightPosition");
+    glUniform3fv(locLightPosition, 1, glm::value_ptr(lightPosition));
+    locTexture = glGetUniformLocation(idProgramShader, "rgbTexture");
+    glUniform1i(locTexture, 1);
+}
 
 
-void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
-
+void initializeBuffers(    vector<int> &indices,
+                       vector<Vertex> &vertices){
+    
     // 1) Initialize the vertices/indices
-    initVerticesAndIndices(textureWidth, textureHeight, indices, vertices);
+    initVerticesAndIndices( indices, vertices);
 
-
-    // 2) Initialize the camera
-    initCamera(textureWidth, textureHeight, camera);
-
-
-    // 3) Initialize the shaders
-    // Initizalize shaders with idProgramShader
-    // TODO - Bunu da init etmek gerekiyor
-    // string vertexShader = "src/shaders/shader.vert";
-    // string fragmentShader = "src/shaders/shader.frag";
-    // initShaders(idProgramShader, vertexShader , fragmentShader );
-    // glUseProgram(idProgramShader);
-
-    // 4) Initialize the GPU memory
     GLuint VAO;
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
-
     //Create vbo for vertices
     glGenBuffers(1, &idVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, idVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
     // Create vbo for indices
     glGenBuffers(1, &idIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Index)*indices.size(), &indices[0], GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 1, GL_V3F, GL_FALSE, sizeof(glm::vec3) + sizeof(glm::vec2),(void *) 0);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*indices.size(), indices.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 1, GL_V2F, GL_FALSE, sizeof(glm::vec3) + sizeof(glm::vec2), (void *) (3 * sizeof(glm::vec3)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex,textureCoordinate));
     glEnableVertexAttribArray(1);
-
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex, normal));
+    glEnableVertexAttribArray(2);
 }
 
-void initializeOPENGL(int widthWindow, int heightWindow, int argc, char *argv[]){
-  // TODO -> kanka burasi hata veriyorsa, __MACOS__ yerine baska bir sey olmasi gerekebilir
-  #ifndef __MACOS__
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+void initializeOPENGL(int argc, char *argv[]){
+    
+    // Default ones...
+    if (argc != 3) {
+        printf("Please provide height and texture image files!\n");
+        exit(-1);
+    }
+    
+    glfwSetErrorCallback(errorCallback);
+    
+    if (!glfwInit()) {
+        exit(-1);
+    }
+    
+#ifndef __MACOS__
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glewExperimental = GL_TRUE;
+    glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+#endif
+    
+    win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
+    
+    if (!win) {
+        glfwTerminate();
+        exit(-1);
+    }
+    glfwMakeContextCurrent(win);
+    
+    glViewport(0, 0, widthWindow, heightWindow);
 
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
-
-
-  /// TRADITIONAL  MacOS FLAGS TRY TO REMOVE THEM LATER ON...
-  glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  /////////////////////////////////////////////////////////
-  #endif
-
-  // Default ones...
-  if (argc != 3) {
-      printf("Please provide height and texture image files!\n");
-      exit(-1);
-  }
-
-  glfwSetErrorCallback(errorCallback);
-
-  if (!glfwInit()) {
-      exit(-1);
-  }
-
-  win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
-
-  if (!win) {
-      glfwTerminate();
-      exit(-1);
-  }
-  glfwMakeContextCurrent(win);
-
-
-  GLenum err = glewInit();
-  if (err != GLEW_OK) {
-      fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-
-      glfwTerminate();
-      exit(-1);
-  }
-
-  // Keyboard interrupts
-  glfwSetKeyCallback(win, keyCallback);
-
+    GLenum err = glewInit();
+    if (err != GLEW_OK) {
+        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
+        
+        glfwTerminate();
+        exit(-1);
+    }
+    
+    // Keyboard interrupts
+    glfwSetKeyCallback(win, keyCallback);
 }
-void denemeUcgenler(){
-  // BUNLAR GECICI TEST ICIN
-  glBegin(GL_TRIANGLES);
-  glColor3f(0.9, 0.0, 0.0);
-  glVertex3f(500.,100., 0.);
-  glVertex3f(600.,100., 0.);
-  glVertex3f(500.,200.,0.);
-  glEnd();
 
-  glBegin(GL_TRIANGLES);
-  glColor3f(0., 0.7, 0.);
-  glVertex3f(500., 0., 100.);
-  glVertex3f(600., 0., 100.);
-  glVertex3f(500., 0., 600.);
-  glEnd();
-}
 int main(int argc, char *argv[]) {
-    vector<Index> indices;
+
+    // containers for data
+    vector<int> indices;
     vector<Vertex> vertices;
 
-
-
-    float heightFactor;
-
-    // TODO -> bu statik mi kalacak ya?
-    int widthWindow  = 1000;
-    int heightWindow = 500;
-
+    // Properties
+    float heightFactor = 10.f;
+    float aspectRatio = 1.0;
+    float nearPlane = 0.1;
+    float farPlane = 1000.;
+    float YfieldOfView = 45.0;
+    
     // Initialize the opengl framework
-    initializeOPENGL(widthWindow, heightWindow, argc, argv);
-
+    initializeOPENGL(argc, argv);
+    
+    //  Initialize the shaders
+    string vertexShader = "src/shaders/shader.vert";
+    string fragmentShader = "src/shaders/shader.frag";
+    initShaders(idProgramShader, vertexShader , fragmentShader );
+    
     // From helper...
-    initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
+    initTexture(argv[1], argv[2], &widthTexture, &heightTexture);
 
     // Initialize all the remaining properties
-    initialize(camera, textureWidth, textureHeight, indices, vertices);
-
-
+    initializeBuffers( indices, vertices);
+    initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
+    glUseProgram(idProgramShader);
+    // initialize uniforms
+    initializeUniforms( heightFactor);
+    
+    glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(win)) {
-      // Kanka burda sanirim glDrawElements gibi bir sey olacak ama o kismi cozemedim, bakabilir misin?
-      // glDrawElements(GL_TRIANGLES, numTriangles[1]*3, GL_UNSIGNED_INT,(GLvoid *)(sizeof(GLuint)*numTriangles[0]*3));
-
-      //// Clear the view!
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-      //// Sizing the view
-      int height;
-      int width;
-      // Get current size
-      glfwGetFramebufferSize(win, &width, &height);
-      // Set the rendering size
-      glViewport(0, 0, width, height);
-
-      //// Calculate the camera
-      calculateCamera(camera);
-
-      //// Sadece denemek icin
-      denemeUcgenler();
-
-
-      glfwSwapBuffers(win);
-      glfwPollEvents();
+        
+        calculateCamera(indices,  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
+        if(initGeo){
+             initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
+            initGeo = false;
+        }
+        glfwSwapBuffers(win);
+        glfwPollEvents();
     }
-
-
     glfwDestroyWindow(win);
     glfwTerminate();
     return 0;
