@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include <glm/ext.hpp>
 #include <vector>
-#include "helper.h"
+#include "helper.hpp"
 
 using namespace std;
 
