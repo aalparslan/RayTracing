@@ -1,7 +1,10 @@
 #include <GL/glew.h>
-#include <glm/ext.hpp>
+#include "glm/glm.hpp"
+#include "glm/gtx/transform.hpp"
+#include "glm/gtx/rotate_vector.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include <vector>
-#include "helper.hpp"
+#include "helper.h"
 
 using namespace std;
 
