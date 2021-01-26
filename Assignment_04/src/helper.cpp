@@ -1,4 +1,4 @@
-#include "helper.hpp"
+#include "helper.h"
 
 void initShaders(GLuint &programID, std::string &vertFile, std::string &fragFile)
 {
