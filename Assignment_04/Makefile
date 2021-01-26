@@ -7,7 +7,7 @@ CXX = g++
 # General flags
 CXXFLAGS = -std=c++11 
 LDFLAGS = -lpthread -ljpeg
-GLFLAGS = -lglfw  -lGLEW
+GLFLAGS = -lglfw3  -lGLEW
 
 # Add X flags for X11 systems
 ifeq ($(UNAME), Linux)
