@@ -24,7 +24,7 @@ SOURCES = $(wildcard ./src/*.cpp)
 .PHONY: all clean
 
 all:
-	$(CXX) $(CXXFLAGS) -o hw4 $(SOURCES) -I./glm-0.9.9.3/ \
+	$(CXX) $(CXXFLAGS) -o hw4 $(SOURCES) -I./src/glm/ \
 		$(LDFLAGS) \
 		$(GLFLAGS)
 
