@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include <glm/ext.hpp>
 #include <vector>
-#include "helper.hpp"
+#include "helper.h"
 
 using namespace std;
 
@@ -28,7 +28,6 @@ struct Vertex {
     glm::vec2 textureCoordinate;
     //normal
     glm::vec3 normal;
-    
 };
 
 int widthTexture, heightTexture;
@@ -96,7 +95,6 @@ void calculateCamera(vector<int> &indices, float &heightFactor, float &aspectRat
     // Send new geometry to OpenGL
     glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
     glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
-    
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
     
 }
@@ -123,7 +121,6 @@ void initGeometry(float &heightFactor, float &aspectRatio, float &nearPlane, flo
 
     // Initial speed
     camera.speed = 0;
-
     heightFactor = 10;
 }
 
@@ -189,17 +186,17 @@ void initVerticesAndIndices(    vector<int> &indices,
     for(int i = 1; i < heightTexture+1; i++){
         for(int j = 1; j < widthTexture+1; j++){
 
-            if(((i)*widthTexture + j + 1) % (widthTexture +1) == 0){
-                continue;
+            // asagidaki if en sagdaki vertexlerle en soldaki arasinda ucgen olusturmayip diger durumlarda olusturuyor.
+            if(((i)*widthTexture + j + 1) % (widthTexture +1) != 0){
+                
+                indices.push_back((i-1)*widthTexture + j-1);
+                indices.push_back((i)*widthTexture + j );
+                indices.push_back((i-1)*widthTexture + j);
+                
+                indices.push_back((i-1)*widthTexture + j );
+                indices.push_back((i)*widthTexture + j );
+                indices.push_back((i)*widthTexture + j + 1);
             }
-            indices.push_back((i-1)*widthTexture + j-1);
-            indices.push_back((i)*widthTexture + j );
-            indices.push_back((i-1)*widthTexture + j);
-
-            indices.push_back((i-1)*widthTexture + j );
-            indices.push_back((i)*widthTexture + j );
-            indices.push_back((i)*widthTexture + j + 1);
-
         }
     }
 
@@ -224,10 +221,10 @@ void initializeUniforms( float &heightFactor){
     glUniform1f(locHeightFactor, heightFactor);
     locTextureHeight = glGetUniformLocation(idProgramShader,"heightTexture");
     glUniform1i(locTextureHeight, heightTexture);
-    locTextureWidth = glGetUniformLocation(idProgramShader,"widthTexture");
-    glUniform1i(locTextureWidth, widthTexture);
     locCameraPosition = glGetUniformLocation(idProgramShader,"cameraPos");
     glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
+    locTextureWidth = glGetUniformLocation(idProgramShader,"widthTexture");
+    glUniform1i(locTextureWidth, widthTexture);
     locLightPosition = glGetUniformLocation(idProgramShader, "lightPosition");
     glUniform3fv(locLightPosition, 1, glm::value_ptr(lightPosition));
     locTexture = glGetUniformLocation(idProgramShader, "rgbTexture");
@@ -325,10 +322,8 @@ int main(int argc, char *argv[]) {
     string vertexShader = "src/shaders/shader.vert";
     string fragmentShader = "src/shaders/shader.frag";
     initShaders(idProgramShader, vertexShader , fragmentShader );
-    
     // From helper...
     initTexture(argv[1], argv[2], &widthTexture, &heightTexture);
-
     // Initialize all the remaining properties
     initializeBuffers( indices, vertices);
     initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
