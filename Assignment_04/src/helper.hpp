@@ -28,4 +28,5 @@ bool readDataFromFile(const string& fileName, string &data);
 
 void initTexture(char *height_map_file, char *texture_map_file, int *w, int *h);
 
+
 #endif
