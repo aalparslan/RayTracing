@@ -1,10 +1,13 @@
-#version 330 core
+#version 120
 
 
-layout(location = 0) in vec3 position;
-layout(location = 2) in vec3 normal;
-layout(location = 1) in vec2 texCoord;
+//layout(location = 0) in vec3 position;
+//layout(location = 2) in vec3 normal;
+//layout(location = 1) in vec2 texCoord;
 // Data from CPU
+
+
+
 uniform mat4 MVP; // ModelViewProjection Matrix
 uniform vec3 cameraPosition;
 uniform vec3 lightPosition;
@@ -17,15 +20,21 @@ uniform int heightTexture;
 
 
 // Output to Fragment Shader
-out vec2 textureCoordinate; // For texture-color
-out vec3 vertexNormal; // For Lighting computation
-out vec3 ToLightVector; // Vector from Vertex to Light;
-out vec3 ToCameraVector; // Vector from Vertex to Camera;
+varying vec2 textureCoordinate; // For texture-color
+varying vec3 vertexNormal; // For Lighting computation
+varying vec3 ToLightVector; // Vector from Vertex to Light;
+varying vec3 ToCameraVector; // Vector from Vertex to Camera;
+
+//float findHeight(in vec2 uv ){
+//    return  heightFactor * texture(rgbTexture, uv).r;
+//
+//}
 
 float findHeight(in vec2 uv ){
-    return  heightFactor * texture(rgbTexture, uv).r;
+    return  heightFactor * texture2D(rgbTexture,uv).r;
     
 }
+
 
 vec3 findNormal(in vec3 position){
     
@@ -43,7 +52,7 @@ vec3 findNormal(in vec3 position){
     vec3 topTrianglePosition = vec3(position.x, rightTriangleHeight, position.z-1);
     vec3 bottomTrianglePosition = vec3(position.x, rightTriangleHeight, position.z+1);
     vec3 topRightTrianglePosition = vec3(position.x +1, rightTriangleHeight, position.z-1);
-
+    
     
     vec3 toTopRightVector = topRightTrianglePosition - position;
     vec3 toBottomVector = bottomTrianglePosition - position;
@@ -73,8 +82,14 @@ vec3 findNormal(in vec3 position){
 
 void main()
 {
+    
+     vec4 position = gl_Vertex;
+     vec3 normal =  gl_Normal;// check this later
+    
+    
     // get texture value, compute height
-    textureCoordinate = texCoord;
+    textureCoordinate.x = gl_MultiTexCoord0.x;
+    textureCoordinate.y = 1-gl_MultiTexCoord0.y;
     // compute normal vector using also the heights of neighbor vertices
     vec3 newPosition = vec3(position.x, findHeight(textureCoordinate), position.z);
     vertexNormal = findNormal(newPosition);
