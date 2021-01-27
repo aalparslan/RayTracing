@@ -142,27 +142,27 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }else if(key == GLFW_KEY_A  && action == GLFW_PRESS){
+    }else if(key == GLFW_KEY_A  && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         // Camera look up
         camera.yawAngle = camera.yawAngle + 0.05;
         // calculateCamera(camera);
-    }else if(key == GLFW_KEY_D && action == GLFW_PRESS){
+    }else if(key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         // Camera look down
         camera.yawAngle = camera.yawAngle - 0.05;
         // calculateCamera(camera);
-    }else if(key == GLFW_KEY_S && action == GLFW_PRESS){
+    }else if(key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         camera.pitchAngle = camera.pitchAngle - 0.05;
         // calculateCamera(camera);
-    }else if(key == GLFW_KEY_W && action == GLFW_PRESS){
+    }else if(key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         camera.pitchAngle = camera.pitchAngle + 0.05;
         // calculateCamera(camera);
-    }else if(key == GLFW_KEY_I){
+    }else if(key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         initGeo = true;
-    }else if(key == GLFW_KEY_Y){
+    }else if(key == GLFW_KEY_Y && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         camera.speed += 0.01;
-    }else if(key == GLFW_KEY_H){
+    }else if(key == GLFW_KEY_H && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         camera.speed -= 0.01;
-    }else if(key == GLFW_KEY_X && action == GLFW_PRESS){
+    }else if(key == GLFW_KEY_X && (action == GLFW_PRESS || action == GLFW_REPEAT)){
       camera.speed = 0.0;
     }else if(key == GLFW_KEY_P && action == GLFW_PRESS){
         if(!fullScreenMode){
