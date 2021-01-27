@@ -426,9 +426,19 @@ int main(int argc, char *argv[]) {
     // initialize uniforms
     initializeUniforms( heightFactor);
 
+    // Set we want to resize the window!
+    glfwSetWindowAttrib(win, GLFW_RESIZABLE , GLFW_TRUE);
+
     glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(win)) {
         //////////
+        // Automatic window size
+        int currentWindowWidth;
+        int currentWindowHeight;
+        glfwGetWindowSize(win, &currentWindowWidth, &currentWindowHeight);
+        // cout << currentWindowWidth << endl;
+        glViewport(0, 0, currentWindowWidth, currentWindowHeight);
+
 
         glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
         glNormalPointer(GL_FLOAT,0,0);
@@ -474,12 +484,6 @@ int main(int argc, char *argv[]) {
         glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
         glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
         glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
-        ///////////
-//        calculateCamera(indices,  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
-//        if(initGeo){
-//            initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
-//            initGeo = false;
-//        }
 
         glfwSwapBuffers(win);
         glfwPollEvents();
