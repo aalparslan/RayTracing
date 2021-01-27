@@ -196,16 +196,22 @@ GLuint vboIndex;
 void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> &indices, vector<Vertex> &vertices){
   // Initialize the buffer objects
   // TODO -> sadece calissin diye yapiyorum
-  vertices = vector<Vertex>(3*textureWidth*textureHeight);
+  int num_vertices = 2*3*textureWidth*textureHeight;
+  vertices = vector<Vertex>(num_vertices);
   for(int i = 0; i < textureHeight; i++){
       for(int j = 0; j < textureWidth; j++){
-          vertices[3*(i*textureWidth+j)+0].vPosition = glm::vec3(i, j, 0);
-          vertices[3*(i*textureWidth+j)+1].vPosition = glm::vec3(i+1, j, 0);
-          vertices[3*(i*textureWidth+j)+2].vPosition = glm::vec3(i+1, j+1, 0);
+          vertices[6*(i*textureWidth+j)+0].vPosition = glm::vec3(i, j, 0);
+          vertices[6*(i*textureWidth+j)+1].vPosition = glm::vec3(i+1, j, 0);
+          vertices[6*(i*textureWidth+j)+2].vPosition = glm::vec3(i+1, j+1, 0);
+
+          vertices[6*(i*textureWidth+j)+3].vPosition = glm::vec3(i, j, 0);
+          vertices[6*(i*textureWidth+j)+4].vPosition = glm::vec3(i, j+1, 0);
+          vertices[6*(i*textureWidth+j)+5].vPosition = glm::vec3(i+1, j+1, 0);
+
       }
   }
 
-  GLfloat* vertexArray = new GLfloat[vertices.size() * 3];
+  GLfloat* vertexArray = new GLfloat[num_vertices];
   for(int counter = 0; counter < vertices.size(); counter++){
     vertexArray[counter*3+0] = vertices[counter].vPosition.x;
     vertexArray[counter*3+1] = vertices[counter].vPosition.y;
@@ -215,7 +221,7 @@ void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> 
 
 
 
-  GLint* indexArray = new GLint[3*vertices.size()];
+  GLint* indexArray = new GLint[num_vertices];
   for(int counter = 0; counter < vertices.size(); counter++){
     indexArray[counter*3+0] = counter*3+0;
     indexArray[counter*3+1] = counter*3+1;
@@ -286,12 +292,12 @@ void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> 
   glGenBuffers(1, &vboVertex);
   glBindBuffer(GL_ARRAY_BUFFER, vboVertex);
   // glBufferData(GL_ARRAY_BUFFER, vertices.size() * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
-  glBufferData(GL_ARRAY_BUFFER, vertices.size() * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, num_vertices * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
 
   // Bind VBO for drawing array data
   glGenBuffers(1, &vboIndex);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndex);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertices.size() * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_vertices * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
   // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
 
 
@@ -461,7 +467,9 @@ int main(int argc, char *argv[]) {
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndex);
 
       // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glDrawElements(GL_TRIANGLES, 3*textureWidth*textureHeight*3, GL_UNSIGNED_INT, 0);
+      // TODO -> indexler
+      int num_vertices = 2 * 3 * textureWidth * textureHeight;
+      glDrawElements(GL_TRIANGLES, num_vertices, GL_UNSIGNED_INT, 0);
       // glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
