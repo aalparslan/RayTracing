@@ -74,6 +74,9 @@ glm::mat4 Projection;
 
 glm::vec3 lightPosition;
 
+// shader'in ne olcude kayacagini tutuyor
+int textureOffset = 0;
+
 // locations
 int locTextureHeight, locTextureWidth, locTexture, locMVP, locHeightFactor, locCameraPosition, locLightPosition;
 
@@ -211,6 +214,10 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
       heightFactor += 0.5;
     }else if(key == GLFW_KEY_F && (action == GLFW_PRESS || action == GLFW_REPEAT)){
       heightFactor -= 0.5;
+    }else if(key == GLFW_KEY_E && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      textureOffset += 1;
+    }else if(key == GLFW_KEY_Q && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      textureOffset -= 1;
     }
 }
 
