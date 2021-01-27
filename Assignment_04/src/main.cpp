@@ -9,8 +9,11 @@
 using namespace std;
 
 static GLFWwindow* win = NULL;
-int widthWindow  = 1000;
-int heightWindow = 1000;
+// TODO -> simdilik test icin degistir
+// int widthWindow  = 1000;
+// int heightWindow = 1000;
+int widthWindow  = 500;
+int heightWindow = 500;
 
 // Shaders
 GLuint idProgramShader;
@@ -161,7 +164,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         camera.speed -= 0.01;
     }else if(key == GLFW_KEY_X && action == GLFW_PRESS){
       camera.speed = 0.0;
-    }else if(key == GLFW_KEY_P){
+    }else if(key == GLFW_KEY_P && action == GLFW_PRESS){
         if(!fullScreenMode){
             // Do not forget to store the current view!
             glfwGetWindowPos(window, &windowModeXStart, &windowModeYStart);
