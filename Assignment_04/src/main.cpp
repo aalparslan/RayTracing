@@ -57,9 +57,7 @@ struct Vertex {
     glm::vec2 tPosition;
 
 };
-struct Index {
-    glm::vec3 pos;
-};
+
 void calculateCamera(Camera &camera){
   /*
    * After called, GL_MODELVIEW will be the loaded!
