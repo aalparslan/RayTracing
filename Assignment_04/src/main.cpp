@@ -172,7 +172,20 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
 }
 
-void setUniforms(){
+void setupShaderVariables(int textureHeight, int textureWidth){
+    // Uniform float variables
+    int var_loc;
+    var_loc = glGetUniformLocation(idProgramShader, "textureHeight");
+    glUniform1f(var_loc, textureHeight);
+
+    var_loc = glGetUniformLocation(idProgramShader, "textureWidth");
+    glUniform1f(var_loc, textureWidth);
+
+
+    var_loc = glGetUniformLocation(idProgramShader, "heightFactor");
+    glUniform1f(var_loc, 10);
+
+    //
     // int locMVP = glGetUniformLocation(idProgramShader, "MVP");
     // glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
     // locHeightFactor = glGetUniformLocation(idProgramShader,"heightFactor");
@@ -197,13 +210,13 @@ void initializeBuffers(int textureHeight, int textureWidth){
   vector<Vertex> vertices = vector<Vertex>(num_vertices);
   for(int i = 0; i < textureHeight; i++){
       for(int j = 0; j < textureWidth; j++){
-          vertices[6*(i*textureWidth+j)+0].vPosition = glm::vec3(i, j, 0);
-          vertices[6*(i*textureWidth+j)+1].vPosition = glm::vec3(i+1, j, 0);
-          vertices[6*(i*textureWidth+j)+2].vPosition = glm::vec3(i+1, j+1, 0);
+          vertices[6*(i*textureWidth+j)+0].vPosition = glm::vec3(j, 0, i);
+          vertices[6*(i*textureWidth+j)+1].vPosition = glm::vec3(j, 0, i+1);
+          vertices[6*(i*textureWidth+j)+2].vPosition = glm::vec3(j+1, 0, i+1);
 
-          vertices[6*(i*textureWidth+j)+3].vPosition = glm::vec3(i, j, 0);
-          vertices[6*(i*textureWidth+j)+4].vPosition = glm::vec3(i, j+1, 0);
-          vertices[6*(i*textureWidth+j)+5].vPosition = glm::vec3(i+1, j+1, 0);
+          vertices[6*(i*textureWidth+j)+3].vPosition = glm::vec3(j, 0, i);
+          vertices[6*(i*textureWidth+j)+4].vPosition = glm::vec3(j+1, 0, i);
+          vertices[6*(i*textureWidth+j)+5].vPosition = glm::vec3(j+1, 0, i+1);
 
       }
   }
@@ -269,6 +282,8 @@ void initialize(Camera &camera, int textureWidth, int textureHeight){
     string fragmentShader = "src/shaders/shader.frag";
     initShaders(idProgramShader, vertexShader , fragmentShader);
     glUseProgram(idProgramShader);
+    // Set uniforms
+    setupShaderVariables(textureWidth, textureHeight);
 
     // 4) Initialize the GPU memory
     initializeBuffers(textureHeight, textureWidth);

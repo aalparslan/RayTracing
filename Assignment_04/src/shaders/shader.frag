@@ -1,23 +1,26 @@
 #version 120
 
+// Color texture, which is processed firstly!
+uniform sampler2D colorTexture;
 
-// Output Color
-// out vec4 color;
+// Gray scale height texture data
+uniform sampler2D heightTexture;
 
-// uniform mat4 MVP; // ModelViewProjection Matrix
-// uniform mat4 MV; // ModelView idMVPMatrix
-// uniform vec4 cameraPosition;
-//
-// // Texture-related data;
-// uniform sampler2D rgbTexture;
-// uniform int widthTexture;
-// uniform int heightTexture;
-//
-// // Data from Vertex Shader
-// in vec2 textureCoordinate;
-// in vec3 vertexNormal; // For Lighting computation
-// in vec3 ToLightVector; // Vector from Vertex to Light;
-// in vec3 ToCameraVector; // Vector from Vertex to Camera;
+// How long are the world shapes
+uniform float heightFactor;
+
+
+// Texture dimensions
+uniform float textureWidth;
+uniform float textureHeight;
+
+// Normal vector
+varying vec3 normalVector;
+
+
+// Vertex coordinate
+varying vec2 vertexCanvasCoordinate;
+
 
 void main() {
 
@@ -43,5 +46,8 @@ void main() {
 
     // compute the color using the following equation
     // color = vec4(clamp( textureColor.xyz * vec3(ambient + diffuse + specular), 0.0, 1.0), 1.0);
-    gl_FragColor = vec4(0., 1., 1., 1.);
+
+
+    gl_FragColor = texture2D(colorTexture, vertexCanvasCoordinate);
+    //gl_FragColor = vec4(vertexCanvasCoordinate.x, vertexCanvasCoordinate.y, 0., 1.0);
 }

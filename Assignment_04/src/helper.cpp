@@ -11,6 +11,10 @@ void initShaders(GLuint &programID, std::string &vertFile, std::string &fragFile
     glAttachShader(programID, idVertexShader);
     glAttachShader(programID, idFragmentShader);
 
+    glBindAttribLocation (programID, 0, "colorTexture");
+    glBindAttribLocation (programID, 1, "heightTexture");
+
+
     glLinkProgram(programID);
 }
 
