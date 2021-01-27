@@ -211,7 +211,7 @@ void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> 
       }
   }
 
-  GLfloat* vertexArray = new GLfloat[num_vertices];
+  GLfloat* vertexArray = new GLfloat[3*num_vertices];
   for(int counter = 0; counter < vertices.size(); counter++){
     vertexArray[counter*3+0] = vertices[counter].vPosition.x;
     vertexArray[counter*3+1] = vertices[counter].vPosition.y;
@@ -292,12 +292,12 @@ void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> 
   glGenBuffers(1, &vboVertex);
   glBindBuffer(GL_ARRAY_BUFFER, vboVertex);
   // glBufferData(GL_ARRAY_BUFFER, vertices.size() * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
-  glBufferData(GL_ARRAY_BUFFER, num_vertices * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, 3 * num_vertices * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
 
   // Bind VBO for drawing array data
   glGenBuffers(1, &vboIndex);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndex);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_vertices * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, num_vertices * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
   // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
 
 
