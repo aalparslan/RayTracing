@@ -4,7 +4,7 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include <vector>
-#include "helper.h"
+#include "helper.hpp"
 
 using namespace std;
 
@@ -378,8 +378,8 @@ int main(int argc, char *argv[]) {
         int currentWindowWidth;
         int currentWindowHeight;
         glfwGetWindowSize(win, &currentWindowWidth, &currentWindowHeight);
-        cout << currentWindowWidth << endl;
-        cout << currentWindowHeight << endl;
+        //cout << currentWindowWidth << endl;
+        //cout << currentWindowHeight << endl;
         glViewport(0, 0, currentWindowHeight, currentWindowWidth);
         
         
