@@ -4,7 +4,7 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include <vector>
-#include "helper.hpp"
+#include "helper.h"
 
 using namespace std;
 
@@ -80,13 +80,13 @@ void calculateCamera(vector<int> &indices, float &heightFactor, float &aspectRat
     glClearDepth(1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     camera.gaze = glm::normalize(glm::vec3(
-                                                    // x
-                                                    cos(glm::radians(camera.pitchAngle))*cos(glm::radians(camera.yawAngle)),
-                                                    // y
-                                                    sin(glm::radians(camera.pitchAngle - 45.0) ), ///check
-                                                    // z
-                                                    cos(glm::radians(camera.pitchAngle))*sin(glm::radians(camera.yawAngle))
-                                                    ));
+                                           // x
+                                           cos(glm::radians(camera.pitchAngle))*cos(glm::radians(camera.yawAngle)),
+                                           // y
+                                           sin(glm::radians(camera.pitchAngle - 45.0) ), ///check
+                                           // z
+                                           cos(glm::radians(camera.pitchAngle))*sin(glm::radians(camera.yawAngle))
+                                           ));
     
     // Calculate the camera position in time
     camera.position = camera.position + camera.speed * camera.gaze;
@@ -94,7 +94,7 @@ void calculateCamera(vector<int> &indices, float &heightFactor, float &aspectRat
     View = glm::lookAt(camera.position, camera.position + camera.gaze, camera.up);
     Projection = glm::perspective(YfieldOfView, aspectRatio, nearPlane, farPlane);
     MVP = Projection * View * Model;
-
+    
     // Send new geometry to OpenGL
     glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
     glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
@@ -109,19 +109,19 @@ void initGeometry(float &heightFactor, float &aspectRatio, float &nearPlane, flo
     camera.position = glm::vec3(widthTexture / 2.0, widthTexture / 10.0, - widthTexture / 4.0);
     camera.gaze = glm::vec3(0.0, 0.0, 0.1);
     camera.up = glm::vec3(0.0, 1.0, 0.0);
-
+    
     //init mvp
     Model = glm::mat4(1.0);
     View = glm::lookAt(camera.position, camera.position + camera.gaze, camera.up);
     Projection = glm::perspective(YfieldOfView, aspectRatio, nearPlane, farPlane);
     MVP = Projection * View * Model;
-
+    
     // initialize light as specified in the pdf.
     lightPosition = glm::vec3(widthTexture/ 2.0, 100, heightTexture / 2.0);
     // Initial gaze
     camera.pitchAngle = 45.0;
     camera.yawAngle   = 90.0;
-
+    
     // Initial speed
     camera.speed = 0;
     heightFactor = 10;
@@ -136,7 +136,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
      * Alttaki yerde sirayla bakiyoruz...
      * OPENGL sebebiyle kamerayi local yapamiyoruz, global olmak zorunda :/
      */
-
+    
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS){
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }else if(key == GLFW_KEY_A){
@@ -164,18 +164,18 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
             // Do not forget to store the current view!
             glfwGetWindowPos(window, &windowModeXStart, &windowModeYStart);
             glfwGetWindowSize(window, &windowModeXSize, &windowModeYSize);
-
+            
             fullScreenMode = true;
-
+            
             // Get the video mode
             const GLFWvidmode* videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
+            
             // Set the window to the expected mode!
             glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, videoMode->width, videoMode->height, 0);
         }else{
             // Set windowed operation flag
             fullScreenMode = false;
-
+            
             // Set back!
             glfwSetWindowMonitor(window, NULL, windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize, 0);
         }
@@ -185,10 +185,10 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 void initVerticesAndIndices(    vector<int> &indices,
                             vector<Vertex> &vertices){
     // initiate indices
-
+    
     for(int i = 1; i < heightTexture+1; i++){
         for(int j = 1; j < widthTexture+1; j++){
-
+            
             // asagidaki if en sagdaki vertexlerle en soldaki arasinda ucgen olusturmayip diger durumlarda olusturuyor.
             if(((i)*widthTexture + j + 1) % (widthTexture +1) != 0){
                 
@@ -202,8 +202,8 @@ void initVerticesAndIndices(    vector<int> &indices,
             }
         }
     }
-
-   //  initiate vertices
+    
+    //  initiate vertices
     for(int i = 0; i < heightTexture+1; i++){
         for(int j = 0; j < widthTexture+1; j++){
             Vertex v;
@@ -240,10 +240,9 @@ void initializeBuffers(    vector<int> &indices,
     
     // 1) Initialize the vertices/indices
     initVerticesAndIndices( indices, vertices);
+    
 
-    GLuint VAO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    
     //Create vbo for vertices
     glGenBuffers(1, &idVertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, idVertexBuffer);
@@ -252,12 +251,31 @@ void initializeBuffers(    vector<int> &indices,
     glGenBuffers(1, &idIndexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIndexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*indices.size(), indices.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex,textureCoordinate));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex, normal));
-    glEnableVertexAttribArray(2);
+   
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_INDEX_ARRAY);
+    
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    
+    
+//    GLint mPosition = glGetAttribLocation(idProgramShader, "position");
+//    glVertexAttribPointer(mPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
+//    glEnableVertexAttribArray(0);
+//
+//    GLint mTexCoord = glGetAttribLocation(idProgramShader,"textCoord");
+//    glVertexAttribPointer(mTexCoord, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex,textureCoordinate));
+//    glEnableVertexAttribArray(1);
+//
+//
+//    GLint mNormal = glGetAttribLocation(idProgramShader,"normal");
+//    glVertexAttribPointer(mNormal, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex, normal));
+//    glEnableVertexAttribArray(2);
 }
 
 void initializeOPENGL(int argc, char *argv[]){
@@ -274,14 +292,12 @@ void initializeOPENGL(int argc, char *argv[]){
         exit(-1);
     }
     
-#ifndef __MACOS__
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glewExperimental = GL_TRUE;
-    glfwWindowHint (GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-#endif
+   // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    //glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     
     win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
     
@@ -289,10 +305,14 @@ void initializeOPENGL(int argc, char *argv[]){
         glfwTerminate();
         exit(-1);
     }
-    glfwMakeContextCurrent(win);
     
-    glViewport(0, 0, widthWindow, heightWindow);
-
+    // Keyboard interrupts
+    glfwSetKeyCallback(win, keyCallback);
+    glfwMakeContextCurrent(win);
+    printf("OpenGL version: %s - %s\n",glGetString(GL_RENDERER),glGetString(GL_VERSION));
+    
+    
+    
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
@@ -300,17 +320,30 @@ void initializeOPENGL(int argc, char *argv[]){
         glfwTerminate();
         exit(-1);
     }
+     glfwSwapInterval(1);
     
-    // Keyboard interrupts
-    glfwSetKeyCallback(win, keyCallback);
+
+
 }
 
 int main(int argc, char *argv[]) {
-
+    
+    ////////////////////
+    GLuint vertex_buffer;
+    GLuint normal_buffer;
+    GLuint tcoord_buffer;
+    GLuint index_buffer;
+    
+    vector<GLfloat> vdata;
+    vector<GLfloat> tdata;
+    vector<GLfloat> ndata;
+    vector<GLuint> idata;
+    ///////////////////////
+    
     // containers for data
     vector<int> indices;
     vector<Vertex> vertices;
-
+    
     // Properties
     float heightFactor = 10.f;
     float aspectRatio = 1.0;
@@ -320,28 +353,129 @@ int main(int argc, char *argv[]) {
     
     // Initialize the opengl framework
     initializeOPENGL(argc, argv);
+    //////////////////////////
+    initTexture(argv[1], argv[2], &widthTexture, &heightTexture);
+    initVerticesAndIndices( indices, vertices);
+
+    glGenBuffers(1, &vertex_buffer);
+    glGenBuffers(1, &normal_buffer);
+    glGenBuffers(1, &tcoord_buffer);
+    glGenBuffers(1, &index_buffer);
+    
+    int totalnumberOfVertices = vertices.size();
+    
+    for(vector<Vertex>::iterator it = vertices.begin(); it != vertices.end(); ++it){
+        ndata.push_back(it->normal.x);
+        ndata.push_back(it->normal.y);
+        ndata.push_back(it->normal.z);
+        
+        vdata.push_back(it->vPosition.x);
+        vdata.push_back(it->vPosition.y);
+        vdata.push_back(it->vPosition.z);
+        
+        tdata.push_back(it->textureCoordinate.x);
+        tdata.push_back(it->textureCoordinate.y);
+    }
+    for(vector<int>::iterator it = indices.begin(); it != indices.end(); ++it){
+        idata.push_back(*it);
+    }
+    
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*3*totalnumberOfVertices, vdata.data(), GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*3*totalnumberOfVertices, ndata.data(), GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, tcoord_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*2*totalnumberOfVertices, tdata.data(), GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLuint)*indices.size(), idata.data(), GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    
+    /////////////////
     
     //  Initialize the shaders
     string vertexShader = "src/shaders/shader.vert";
     string fragmentShader = "src/shaders/shader.frag";
     initShaders(idProgramShader, vertexShader , fragmentShader );
-    // From helper...
-    initTexture(argv[1], argv[2], &widthTexture, &heightTexture);
-    // Initialize all the remaining properties
-    initializeBuffers( indices, vertices);
-    initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
     glUseProgram(idProgramShader);
+    /////////////////
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_INDEX_ARRAY);
+    
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    /////////////////
+    // From helper...
+    
+    // Initialize all the remaining properties
+   // initializeBuffers( indices, vertices);
+    initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
+    
     // initialize uniforms
     initializeUniforms( heightFactor);
     
     glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(win)) {
+        //////////
         
-        calculateCamera(indices,  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
-        if(initGeo){
-             initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
-            initGeo = false;
-        }
+        glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
+        glNormalPointer(GL_FLOAT,0,0);
+        glBindBuffer(GL_ARRAY_BUFFER, tcoord_buffer);
+        glTexCoordPointer(2,GL_FLOAT,0,0);
+        glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+        glVertexPointer(3,GL_FLOAT,0,0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+        
+        glUniform1i(glGetUniformLocation(idProgramShader, "idHeightTexture"), 1);
+        glActiveTexture(GL_TEXTURE0 + 1);
+        glBindTexture(GL_TEXTURE_2D,idHeightTexture);
+        
+        glUniform1i(glGetUniformLocation(idProgramShader, "idJpegTexture"), 1);
+        glActiveTexture(GL_TEXTURE0 + 0);
+        glBindTexture(GL_TEXTURE_2D,idJpegTexture);
+
+        glUseProgram(idProgramShader);
+
+        
+
+        
+        glClearColor(0,0,0,1);
+        glClearDepth(1.0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        camera.gaze = glm::normalize(glm::vec3(
+                                               // x
+                                               cos(glm::radians(camera.pitchAngle))*cos(glm::radians(camera.yawAngle)),
+                                               // y
+                                               sin(glm::radians(camera.pitchAngle - 45.0) ), ///check
+                                               // z
+                                               cos(glm::radians(camera.pitchAngle))*sin(glm::radians(camera.yawAngle))
+                                               ));
+        
+        // Calculate the camera position in time
+        camera.position = camera.position + camera.speed * camera.gaze;
+        
+        View = glm::lookAt(camera.position, camera.position + camera.gaze, camera.up);
+        Projection = glm::perspective(YfieldOfView, aspectRatio, nearPlane, farPlane);
+        MVP = Projection * View * Model;
+        
+        // Send new geometry to OpenGL
+        glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
+        glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
+        glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+        ///////////
+//        calculateCamera(indices,  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
+//        if(initGeo){
+//            initGeometry(  heightFactor,  aspectRatio,  nearPlane,  farPlane,   YfieldOfView);
+//            initGeo = false;
+//        }
+
         glfwSwapBuffers(win);
         glfwPollEvents();
     }
