@@ -2,8 +2,8 @@
 
 
 // Output Color
-out vec4 color;
-//
+// out vec4 color;
+
 // uniform mat4 MVP; // ModelViewProjection Matrix
 // uniform mat4 MV; // ModelView idMVPMatrix
 // uniform vec4 cameraPosition;
@@ -43,5 +43,5 @@ void main() {
 
     // compute the color using the following equation
     // color = vec4(clamp( textureColor.xyz * vec3(ambient + diffuse + specular), 0.0, 1.0), 1.0);
-    color = vec4(0., 1., 0., 1.);
+    gl_FragColor = vec4(0., 1., 1., 1.);
 }

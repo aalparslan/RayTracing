@@ -172,8 +172,8 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 
 }
 
-void initializeUniforms( float &heightFactor){
-    // locMVP = glGetUniformLocation(idProgramShader, "MVP");
+void setUniforms(){
+    // int locMVP = glGetUniformLocation(idProgramShader, "MVP");
     // glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
     // locHeightFactor = glGetUniformLocation(idProgramShader,"heightFactor");
     // glUniform1f(locHeightFactor, heightFactor);
@@ -269,7 +269,6 @@ void initialize(Camera &camera, int textureWidth, int textureHeight){
     string fragmentShader = "src/shaders/shader.frag";
     initShaders(idProgramShader, vertexShader , fragmentShader);
     glUseProgram(idProgramShader);
-    // initializeUniforms();
 
     // 4) Initialize the GPU memory
     initializeBuffers(textureHeight, textureWidth);
@@ -386,7 +385,7 @@ int main(int argc, char *argv[]) {
 
       // implement
       // Bind VBO for drawing array data
-      glColor3f(0., 0.7, 0.);
+      // glColor3f(0., 0.7, 0.);
       // GLfloat ambColor[4] = {0.1,0.7,0.1, 1.0};
       // glMaterialfv ( GL_FRONT , GL_AMBIENT , ambColor);
       // glMaterialfv ( GL_FRONT , GL_DIFFUSE , ambColor);

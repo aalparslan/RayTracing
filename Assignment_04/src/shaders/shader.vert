@@ -20,7 +20,6 @@
 // out vec3 ToLightVector; // Vector from Vertex to Light;
 // out vec3 ToCameraVector; // Vector from Vertex to Camera;
 
-
 void main()
 {
 
@@ -31,6 +30,6 @@ void main()
 
     // set gl_Position variable correctly to give the transformed vertex position
 
-    gl_Position = vec4(1,0,0,0); // this is a placeholder. It does not correctly set the position
+    gl_Position = ftransform(); // this is a placeholder. It does not correctly set the position
 
 }
