@@ -173,7 +173,6 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
 }
 
 void initializeUniforms( float &heightFactor){
-  // TODO
     // locMVP = glGetUniformLocation(idProgramShader, "MVP");
     // glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
     // locHeightFactor = glGetUniformLocation(idProgramShader,"heightFactor");
@@ -191,11 +190,11 @@ void initializeUniforms( float &heightFactor){
 GLuint vboVertex;
 GLuint vboNormal;
 GLuint vboIndex;
-void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> &indices, vector<Vertex> &vertices){
+void initializeBuffers(int textureHeight, int textureWidth){
   // Initialize the buffer objects
   // TODO -> sadece calissin diye yapiyorum
   int num_vertices = 2*3*textureWidth*textureHeight;
-  vertices = vector<Vertex>(num_vertices);
+  vector<Vertex> vertices = vector<Vertex>(num_vertices);
   for(int i = 0; i < textureHeight; i++){
       for(int j = 0; j < textureWidth; j++){
           vertices[6*(i*textureWidth+j)+0].vPosition = glm::vec3(i, j, 0);
@@ -254,7 +253,7 @@ void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> 
   glShadeModel(GL_SMOOTH);
 
 }
-void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
+void initialize(Camera &camera, int textureWidth, int textureHeight){
 
     // 1) Initialize the vertices/indices
     // initVerticesAndIndices(textureWidth, textureHeight, indices, vertices);
@@ -266,15 +265,14 @@ void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Inde
 
     // 3) Initialize the shaders
     // Initizalize shaders with idProgramShader
-    // TODO - Bunu da init etmek gerekiyor
     // string vertexShader = "src/shaders/shader.vert";
     // string fragmentShader = "src/shaders/shader.frag";
-    // initShaders(idProgramShader, vertexShader , fragmentShader );
+    // initShaders(idProgramShader, vertexShader , fragmentShader);
     // glUseProgram(idProgramShader);
-    // initializeUniforms(); TODO
+    // initializeUniforms();
 
     // 4) Initialize the GPU memory
-    initializeBuffers(textureHeight, textureWidth, indices, vertices);
+    initializeBuffers(textureHeight, textureWidth);
 
 }
 void initializeOPENGL(int widthWindow, int heightWindow, int argc, char *argv[]){
@@ -334,9 +332,6 @@ void denemeUcgenler(){
 }
 
 int main(int argc, char *argv[]) {
-    vector<Index> indices;
-    vector<Vertex> vertices;
-
 
 
     float heightFactor;
@@ -353,7 +348,7 @@ int main(int argc, char *argv[]) {
     initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
 
     // Initialize all the remaining properties
-    initialize(camera, textureWidth, textureHeight, indices, vertices);
+    initialize(camera, textureWidth, textureHeight);
 
 
     while(!glfwWindowShouldClose(win)) {
