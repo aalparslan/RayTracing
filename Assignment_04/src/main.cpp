@@ -4,16 +4,14 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include <vector>
-#include "helper.hpp"
+#include "helper.h"
 
 using namespace std;
 
 static GLFWwindow* win = NULL;
-// TODO -> simdilik test icin degistir
-// int widthWindow  = 1000;
-// int heightWindow = 1000;
-int widthWindow  = 500;
-int heightWindow = 500;
+
+int widthWindow  = 1000;
+int heightWindow = 1000;
 
 // Properties
 float heightFactor = 10.f;
@@ -85,38 +83,7 @@ bool fullScreenMode = false;
 // Hold the previous size of the window!
 int windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize;
 
-//void calculateCamera(vector<int> &indices, float &heightFactor, float &aspectRatio, float &nearPlane, float &farPlane,  float &YfieldOfView){
-//    /*
-//     * After called, GL_MODELVIEW will be the loaded!
-//     * WARNING: THIS FUNCTION RESETS THE MODELVIEW MATRIX!
-//     * This calculates the next position of the camera.
-//     */
-//    // Calculate the camera parameters using the camera properties
-//    glClearColor(0,0,0,1);
-//    glClearDepth(1.0);
-//    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//    camera.gaze = glm::normalize(glm::vec3(
-//                                           // x
-//                                           cos(camera.pitchAngle)*sin(camera.yawAngle),
-//                                           // y
-//                                           sin(camera.pitchAngle),
-//                                           // z
-//                                           cos(camera.pitchAngle)*cos(camera.yawAngle)
-//                                           ));
-//
-//    // Calculate the camera position in time
-//    camera.position = camera.position + camera.speed * camera.gaze;
-//
-//    View = glm::lookAt(camera.position, camera.position + camera.gaze, camera.up);
-//    Projection = glm::perspective(YfieldOfView, aspectRatio, nearPlane, farPlane);
-//    MVP = Projection * View * Model;
-//
-//    // Send new geometry to OpenGL
-//    glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
-//    glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
-//    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
-//
-//}
+
 
 
 
@@ -277,48 +244,6 @@ void initializeUniforms( float &heightFactor){
 }
 
 
-void initializeBuffers(    vector<int> &indices,
-                       vector<Vertex> &vertices){
-    
-    // 1) Initialize the vertices/indices
-    initVerticesAndIndices( indices, vertices);
-    
-    
-    
-    //Create vbo for vertices
-    glGenBuffers(1, &idVertexBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, idVertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertices.size(), vertices.data(), GL_STATIC_DRAW);
-    // Create vbo for indices
-    glGenBuffers(1, &idIndexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIndexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*indices.size(), indices.data(), GL_STATIC_DRAW);
-    
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    glEnableClientState(GL_INDEX_ARRAY);
-    
-    glEnable(GL_TEXTURE_2D);
-    glEnable(GL_DEPTH_TEST);
-    
-    
-    //    GLint mPosition = glGetAttribLocation(idProgramShader, "position");
-    //    glVertexAttribPointer(mPosition, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), nullptr);
-    //    glEnableVertexAttribArray(0);
-    //
-    //    GLint mTexCoord = glGetAttribLocation(idProgramShader,"textCoord");
-    //    glVertexAttribPointer(mTexCoord, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex,textureCoordinate));
-    //    glEnableVertexAttribArray(1);
-    //
-    //
-    //    GLint mNormal = glGetAttribLocation(idProgramShader,"normal");
-    //    glVertexAttribPointer(mNormal, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void *) offsetof(Vertex, normal));
-    //    glEnableVertexAttribArray(2);
-}
 
 void initializeOPENGL(int argc, char *argv[]){
     
@@ -333,12 +258,8 @@ void initializeOPENGL(int argc, char *argv[]){
     if (!glfwInit()) {
         exit(-1);
     }
-    
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+
     glewExperimental = GL_TRUE;
-    // glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    //glfwWindowHint (GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
     
     win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
@@ -353,8 +274,6 @@ void initializeOPENGL(int argc, char *argv[]){
     glfwMakeContextCurrent(win);
     printf("OpenGL version: %s - %s\n",glGetString(GL_RENDERER),glGetString(GL_VERSION));
     
-    
-    
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
@@ -363,8 +282,6 @@ void initializeOPENGL(int argc, char *argv[]){
         exit(-1);
     }
     glfwSwapInterval(1);
-    
-    
     
 }
 
@@ -385,8 +302,6 @@ int main(int argc, char *argv[]) {
     // containers for data
     vector<int> indices;
     vector<Vertex> vertices;
-    
-    
     
     // Initialize the opengl framework
     initializeOPENGL(argc, argv);
@@ -432,23 +347,17 @@ int main(int argc, char *argv[]) {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     
-    
-    /////////////////
-    
     //  Initialize the shaders
     string vertexShader = "src/shaders/shader.vert";
     string fragmentShader = "src/shaders/shader.frag";
     initShaders(idProgramShader, vertexShader , fragmentShader );
     glUseProgram(idProgramShader);
-    /////////////////
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_INDEX_ARRAY);
-    
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_DEPTH_TEST);
-    /////////////////
     // From helper...
     
     // Initialize all the remaining properties
@@ -461,7 +370,7 @@ int main(int argc, char *argv[]) {
     // Set we want to resize the window!
     glfwSetWindowAttrib(win, GLFW_RESIZABLE , GLFW_TRUE);
     
-    glViewport(0, 0, widthWindow, heightWindow);
+    //glViewport(0, 0, widthWindow, heightWindow);
     glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(win)) {
         //////////
@@ -469,8 +378,9 @@ int main(int argc, char *argv[]) {
         int currentWindowWidth;
         int currentWindowHeight;
         glfwGetWindowSize(win, &currentWindowWidth, &currentWindowHeight);
-        // cout << currentWindowWidth << endl;
-        glViewport(0, 0, currentWindowWidth, currentWindowHeight);
+        cout << currentWindowWidth << endl;
+        cout << currentWindowHeight << endl;
+        glViewport(0, 0, currentWindowHeight, currentWindowWidth);
         
         
         glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
@@ -494,11 +404,7 @@ int main(int argc, char *argv[]) {
         
         glUniform1f(locTextureOffset, textureOffset);
         glUniform1i(locTextureOffset, textureOffset);
-        
-        
         glUseProgram(idProgramShader);
-        
-        
         
         
         glClearColor(0,0,0,1);
