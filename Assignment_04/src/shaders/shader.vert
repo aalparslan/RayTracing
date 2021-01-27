@@ -89,7 +89,7 @@ void main()
     
     // get texture value, compute height
     textureCoordinate.x = gl_MultiTexCoord0.x;
-    textureCoordinate.y = 1-gl_MultiTexCoord0.y;
+    textureCoordinate.y = gl_MultiTexCoord0.y;
     // compute normal vector using also the heights of neighbor vertices
     vec3 newPosition = vec3(position.x, findHeight(textureCoordinate), position.z);
     vertexNormal = findNormal(newPosition);
