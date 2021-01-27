@@ -265,10 +265,10 @@ void initialize(Camera &camera, int textureWidth, int textureHeight){
 
     // 3) Initialize the shaders
     // Initizalize shaders with idProgramShader
-    // string vertexShader = "src/shaders/shader.vert";
-    // string fragmentShader = "src/shaders/shader.frag";
-    // initShaders(idProgramShader, vertexShader , fragmentShader);
-    // glUseProgram(idProgramShader);
+    string vertexShader = "src/shaders/shader.vert";
+    string fragmentShader = "src/shaders/shader.frag";
+    initShaders(idProgramShader, vertexShader , fragmentShader);
+    glUseProgram(idProgramShader);
     // initializeUniforms();
 
     // 4) Initialize the GPU memory
