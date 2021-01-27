@@ -38,7 +38,7 @@ struct Vertex {
 
 int widthTexture, heightTexture;
 
-//Camera initialCamera;
+
 struct Camera {
     // Notice for this HW there is no need for up vector
     // All references for the below variables are given w.r.t. (0, 0, 1)
@@ -52,6 +52,9 @@ struct Camera {
     // Speed of the camera with no direction
     float speed;
 };
+// initial camera parameters -> kamerayi sifirlamak icin gerekiyor
+Camera initialCamera;
+// our camera
 Camera camera;
 
 // matrices
@@ -68,7 +71,6 @@ int locTextureHeight, locTextureWidth, locTexture, locMVP, locHeightFactor, locC
 
 // Hold if currently full screen or not
 bool fullScreenMode = false;
-bool initGeo = false;
 // Hold the previous size of the window!
 int windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize;
 
@@ -109,10 +111,11 @@ void calculateCamera(vector<int> &indices, float &heightFactor, float &aspectRat
 
 void initGeometry(float &heightFactor, float &aspectRatio, float &nearPlane, float &farPlane,  float &YfieldOfView){
     // The camera will be positioned initially at (w/2, w/10, -w/4) where w is the width of the texture image
-    camera.position = glm::vec3(widthTexture / 2.0, widthTexture / 10.0, - widthTexture / 4.0);
-    camera.gaze = glm::vec3(0.0, 0.0, 0.1);
-    camera.up = glm::vec3(0.0, 1.0, 0.0);
+    initialCamera.position = glm::vec3(widthTexture / 2.0, widthTexture / 10.0, - widthTexture / 4.0);
+    initialCamera.gaze = glm::vec3(0.0, 0.0, 0.1);
+    initialCamera.up = glm::vec3(0.0, 1.0, 0.0);
 
+    camera = initialCamera;
     //init mvp
     Model = glm::mat4(1.0);
     View = glm::lookAt(camera.position, camera.position + camera.gaze, camera.up);
@@ -157,7 +160,7 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         camera.pitchAngle = camera.pitchAngle + 0.05;
         // calculateCamera(camera);
     }else if(key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)){
-        initGeo = true;
+        camera = initialCamera;
     }else if(key == GLFW_KEY_Y && (action == GLFW_PRESS || action == GLFW_REPEAT)){
         camera.speed += 0.01;
     }else if(key == GLFW_KEY_H && (action == GLFW_PRESS || action == GLFW_REPEAT)){
@@ -184,6 +187,20 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
             // Set back!
             glfwSetWindowMonitor(window, NULL, windowModeXStart, windowModeYStart, windowModeXSize, windowModeYSize, 0);
         }
+    }else if(key == GLFW_KEY_T && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      lightPosition.y += 5;
+      cout << lightPosition.y << endl;
+    }else if(key == GLFW_KEY_G && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      lightPosition.y -= 5;
+      cout << lightPosition.y << endl;
+    }else if(key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      lightPosition.x -= 5;
+    }else if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      lightPosition.x += 5;
+    }else if(key == GLFW_KEY_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      lightPosition.z -= 5;
+    }else if(key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      lightPosition.z += 5;
     }
 }
 
