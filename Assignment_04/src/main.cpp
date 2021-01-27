@@ -181,9 +181,17 @@ void setupShaderVariables(int textureHeight, int textureWidth){
     var_loc = glGetUniformLocation(idProgramShader, "textureWidth");
     glUniform1f(var_loc, textureWidth);
 
-
+    // TODO -> height factor
     var_loc = glGetUniformLocation(idProgramShader, "heightFactor");
     glUniform1f(var_loc, 10);
+
+    // Bind textures to the samplers
+    // https://stackoverflow.com/questions/25252512/how-can-i-pass-multiple-textures-to-a-single-shader
+    var_loc = glGetUniformLocation(idProgramShader, "colorTexture");
+    glUniform1i(var_loc, 0);
+    var_loc  = glGetUniformLocation(idProgramShader, "heightTexture");
+    glUniform1i(var_loc, 1);
+
 
     //
     // int locMVP = glGetUniformLocation(idProgramShader, "MVP");
@@ -328,22 +336,7 @@ void initializeOPENGL(int widthWindow, int heightWindow, int argc, char *argv[])
   glfwSetKeyCallback(win, keyCallback);
 
 }
-void denemeUcgenler(){
-  // BUNLAR GECICI TEST ICIN
-  glBegin(GL_TRIANGLES);
-  glColor3f(0.9, 0.0, 0.0);
-  glVertex3f(500.,100., 0.);
-  glVertex3f(600.,100., 0.);
-  glVertex3f(500.,200.,0.);
-  glEnd();
 
-  glBegin(GL_TRIANGLES);
-  glColor3f(0., 0.7, 0.);
-  glVertex3f(500., 0., 100.);
-  glVertex3f(600., 0., 100.);
-  glVertex3f(500., 0., 600.);
-  glEnd();
-}
 
 int main(int argc, char *argv[]) {
 

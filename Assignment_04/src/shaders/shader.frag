@@ -19,35 +19,36 @@ varying vec3 normalVector;
 
 
 // Vertex coordinate
-varying vec2 vertexCanvasCoordinate;
+varying vec2 vertexWorldXZCoordinate;
 
 
 void main() {
 
-    // Assignment Constants below
-    // get the texture color
-    // vec4 textureColor = texture(rgbTexture, textureCoordinate);
 
-    // apply Phong shading by using the following parameters
-    // vec4 ka = vec4(0.25,0.25,0.25,1.0); // reflectance coeff. for ambient
-    // vec4 Ia = vec4(0.3,0.3,0.3,1.0); // light color for ambient
-    // vec4 Id = vec4(1.0, 1.0, 1.0, 1.0); // light color for diffuse
-    // vec4 kd = vec4(1.0, 1.0, 1.0, 1.0); // reflectance coeff. for diffuse
-    // vec4 Is = vec4(1.0, 1.0, 1.0, 1.0); // light color for specular
-    // vec4 ks = vec4(1.0, 1.0, 1.0, 1.0); // reflectance coeff. for specular
-    // int specExp = 100; // specular exponent
+  // Assignment Constants below
+  // get the texture color
+  vec4 textureColor = texture2D(colorTexture, vertexWorldXZCoordinate);
 
-    // compute ambient component
-    // vec4 ambient = vec4(0, 0, 0, 0);
-    // compute diffuse component
-    // vec4 diffuse = vec4(0, 0, 0, 0);
-    // compute specular component
-    // vec4 specular = vec4(0, 0, 0, 0);
+  // apply Phong shading by using the following parameters
+  vec4 ka = vec4(0.25,0.25,0.25,1.0); // reflectance coeff. for ambient
+  vec4 Ia = vec4(0.3,0.3,0.3,1.0); // light color for ambient
+  vec4 Id = vec4(1.0, 1.0, 1.0, 1.0); // light color for diffuse
+  vec4 kd = vec4(1.0, 1.0, 1.0, 1.0); // reflectance coeff. for diffuse
+  vec4 Is = vec4(1.0, 1.0, 1.0, 1.0); // light color for specular
+  vec4 ks = vec4(1.0, 1.0, 1.0, 1.0); // reflectance coeff. for specular
+  int specExp = 100; // specular exponent
 
-    // compute the color using the following equation
-    // color = vec4(clamp( textureColor.xyz * vec3(ambient + diffuse + specular), 0.0, 1.0), 1.0);
+  // compute ambient component
+  vec3 ambient = (ka * Ia).xyz;
+  // compute diffuse component
+  float cosT = 1.; // dot(normalVector, ToLightVector) > 0.0f ? dot(normalVector, ToLightVector): 0.0f;
+  vec3 diffuse = (Id * kd).xyz * cosT;
+  // compute specular component
+  vec3 reflectedDirection = vec3(1., 1., 1.); //reflect(-ToLightVector, normalVector);
+  float spec = 0.0; // pow(max(dot(ToCameraVector, reflectedDirection), 0.0), specExp);
+  vec3 specular = spec * (Is * ks).xyz;
 
-
-    gl_FragColor = texture2D(colorTexture, vertexCanvasCoordinate);
-    //gl_FragColor = vec4(vertexCanvasCoordinate.x, vertexCanvasCoordinate.y, 0., 1.0);
+  // compute the color using the following equation
+  gl_FragColor = vec4(clamp( textureColor.xyz * vec3(ambient + diffuse + specular), 0.0, 1.0), 1.0);
+  //gl_FragColor = vec4(heightFactor, 0., 0., 1.0);
 }

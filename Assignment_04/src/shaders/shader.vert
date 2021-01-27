@@ -1,7 +1,11 @@
 #version 120
 
+// Color texture, which is processed firstly!
+uniform sampler2D colorTexture;
+
 // Gray scale height texture data
 uniform sampler2D heightTexture;
+
 // How long are the world shapes
 uniform float heightFactor;
 
@@ -13,8 +17,10 @@ uniform float textureHeight;
 // Normal vector
 varying vec3 normalVector;
 
+
 // Vertex coordinate
-varying vec2 vertexCanvasCoordinate;
+varying vec2 vertexWorldXZCoordinate;
+
 
 float findHeight(in vec2 uv){
     return  heightFactor * texture2D(heightTexture, uv).r;
@@ -67,11 +73,15 @@ vec3 normal_calculation(){
 void main()
 {
   // Calculate vertex coordinate to use in fragment shader
-  vertexCanvasCoordinate = vec2(gl_Vertex.x/textureWidth, gl_Vertex.z/textureHeight);
+  vertexWorldXZCoordinate = vec2(gl_Vertex.x/textureWidth, gl_Vertex.z/textureHeight);
+
 
   // Calculate the required normals!
   normalVector = normal_calculation();
 
+  // We need the height!
+  vec4 vertexWithHeight = vec4(gl_Vertex.x, findHeight(vertexWorldXZCoordinate), gl_Vertex.z, gl_Vertex.w);
   // MVP transform...
-  gl_Position = ftransform();
+  gl_Position = gl_ModelViewProjectionMatrix * vertexWithHeight;
+
 }
