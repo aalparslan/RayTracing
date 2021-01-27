@@ -15,6 +15,14 @@ static GLFWwindow* win = NULL;
 int widthWindow  = 500;
 int heightWindow = 500;
 
+// Properties
+float heightFactor = 10.f;
+float aspectRatio = 1.0;
+float nearPlane = 0.1;
+float farPlane = 1000.;
+float YfieldOfView = 45.0;
+
+
 // Shaders
 GLuint idProgramShader;
 GLuint idFragmentShader;
@@ -201,6 +209,10 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
       lightPosition.z -= 5;
     }else if(key == GLFW_KEY_UP && (action == GLFW_PRESS || action == GLFW_REPEAT)){
       lightPosition.z += 5;
+    }else if(key == GLFW_KEY_R && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      heightFactor += 0.5;
+    }else if(key == GLFW_KEY_F && (action == GLFW_PRESS || action == GLFW_REPEAT)){
+      heightFactor -= 0.5;
     }
 }
 
@@ -366,12 +378,7 @@ int main(int argc, char *argv[]) {
     vector<int> indices;
     vector<Vertex> vertices;
 
-    // Properties
-    float heightFactor = 10.f;
-    float aspectRatio = 1.0;
-    float nearPlane = 0.1;
-    float farPlane = 1000.;
-    float YfieldOfView = 45.0;
+
 
     // Initialize the opengl framework
     initializeOPENGL(argc, argv);
