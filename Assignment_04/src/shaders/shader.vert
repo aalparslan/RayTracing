@@ -17,7 +17,7 @@ uniform float heightFactor;
 uniform sampler2D rgbTexture;
 uniform int widthTexture;
 uniform int heightTexture;
-
+uniform int textureOffset;
 
 // Output to Fragment Shader
 varying vec2 textureCoordinate; // For texture-color
@@ -36,14 +36,14 @@ float findHeight(in vec2 uv ){
 }
 
 
-vec3 findNormal(in vec3 position){
+vec3 findNormal(in vec3 position, in float tOffset){
     
-    float topTriangleHeight = findHeight(vec2(1.0 - ((position.x)/widthTexture),1.0 - ((position.z -1.0)/ heightTexture)));
-    float leftTriangleHeight = findHeight( vec2(1.0 - ((position.x -1.0)/  widthTexture), 1.0 - ((position.z)/ heightTexture)));
-    float rightTriangleHeight = findHeight(vec2( 1.0 - ((position.x +1.0)/widthTexture), 1.0 - ((position.z)/heightTexture)));
-    float bottomLeftTriangleHeight = findHeight(vec2(1.0 - ((position.x -1.0)/widthTexture), 1.0 - ((position.z +1.0)/ heightTexture)));
-    float bottomTriangleHeight = findHeight(vec2(1.0 - ((position.x )/ widthTexture), 1.0 - ((position.z +1.0)/ heightTexture)));
-    float topRightTriangleHeight = findHeight(vec2( 1.0 - ((position.x +1.0)/widthTexture), 1.0 - ((position.z -1.0)/ heightTexture)));
+    float topTriangleHeight = findHeight(vec2(1.0 + tOffset - ((position.x)/widthTexture),1.0 - ((position.z -1.0)/ heightTexture)));
+    float leftTriangleHeight = findHeight( vec2(1.0 + tOffset - ((position.x -1.0)/  widthTexture), 1.0 - ((position.z)/ heightTexture)));
+    float rightTriangleHeight = findHeight(vec2( 1.0 + tOffset  - ((position.x +1.0)/widthTexture), 1.0 - ((position.z)/heightTexture)));
+    float bottomLeftTriangleHeight = findHeight(vec2(1.0 + tOffset - ((position.x -1.0)/widthTexture), 1.0 - ((position.z +1.0)/ heightTexture)));
+    float bottomTriangleHeight = findHeight(vec2(1.0 + tOffset - ((position.x )/ widthTexture), 1.0 - ((position.z +1.0)/ heightTexture)));
+    float topRightTriangleHeight = findHeight(vec2( 1.0 + tOffset - ((position.x +1.0)/widthTexture), 1.0 - ((position.z -1.0)/ heightTexture)));
     
     
     vec3 bottomLeftTrianglePosition = vec3(position.x-1, rightTriangleHeight, position.z+1);
@@ -62,12 +62,12 @@ vec3 findNormal(in vec3 position){
     vec3 toLeftVector = leftTrianglePosition - position;
     
     
-    vec3 NormalDueToTopRightAndTopVectors = cross(toTopRightVector,toTopVector);
-    vec3 NormalDueToBottomAndRightVectors = cross(toBottomVector, toRightVector );
-    vec3 NormalDueToLeftAndBottomLeftVectors = cross(toLeftVector, toBottomLeftVector);
-    vec3 NormalDueToRightAndTopRightVectors = cross(toRightVector, toTopRightVector);
-    vec3 NormalDueToBottomLeftAndBottomVectors = cross(toBottomLeftVector, toBottomVector);
-    vec3 NormalDueToTopAndLeftVectors = cross(toTopVector, toLeftVector);
+    vec3 NormalDueToTopRightAndTopVectors = normalize(cross(toTopRightVector,toTopVector));
+    vec3 NormalDueToBottomAndRightVectors = normalize(cross(toBottomVector, toRightVector ));
+    vec3 NormalDueToLeftAndBottomLeftVectors = normalize(cross(toLeftVector, toBottomLeftVector));
+    vec3 NormalDueToRightAndTopRightVectors = normalize(cross(toRightVector, toTopRightVector));
+    vec3 NormalDueToBottomLeftAndBottomVectors = normalize(cross(toBottomLeftVector, toBottomVector));
+    vec3 NormalDueToTopAndLeftVectors = normalize(cross(toTopVector, toLeftVector));
     
     
     vec3 finalNormal = NormalDueToRightAndTopRightVectors
@@ -83,16 +83,17 @@ vec3 findNormal(in vec3 position){
 void main()
 {
     
-     vec4 position = gl_Vertex;
-     vec3 normal =  gl_Normal;// check this later
-    
+    vec4 position = gl_Vertex;
+    vec3 normal =  gl_NormalMatrix * gl_Normal;// check this later
+    float tOffset = textureOffset * ( 1.0f / widthTexture);
     
     // get texture value, compute height
     textureCoordinate.x = gl_MultiTexCoord0.x;
     textureCoordinate.y = gl_MultiTexCoord0.y;
+    textureCoordinate.x += tOffset;
     // compute normal vector using also the heights of neighbor vertices
     vec3 newPosition = vec3(position.x, findHeight(textureCoordinate), position.z);
-    vertexNormal = findNormal(newPosition);
+    vertexNormal = findNormal(newPosition, tOffset);
     // compute toLight vector vertex coordinate in VCS
     ToCameraVector = normalize(cameraPosition - newPosition);
     ToLightVector = normalize(lightPosition - newPosition);
