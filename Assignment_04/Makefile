@@ -15,7 +15,7 @@ all:
 	-ldl \
 	-ldrm \
 	-lXdamage \
-	-lglfw \
+	-lglfw3 \
 	-lrt \
 	-lm \
 	-ldl \
