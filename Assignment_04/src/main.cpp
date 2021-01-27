@@ -173,43 +173,145 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
   }
 
 }
-void initVerticesAndIndices(int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
-    indices  = vector<Index>(2*textureWidth*textureHeight);
-    vertices = vector<Vertex>(2*textureWidth*textureHeight);
 
-    // Calculate the data
-    int k = 0;
-    for(int i = 0; i < textureHeight; i++){
-        for(int j = 0; j < textureWidth; j++){
+void initializeUniforms( float &heightFactor){
+  // TODO
+    // locMVP = glGetUniformLocation(idProgramShader, "MVP");
+    // glUniformMatrix4fv(locMVP, 1, GL_FALSE, glm::value_ptr(MVP));
+    // locHeightFactor = glGetUniformLocation(idProgramShader,"heightFactor");
+    // glUniform1f(locHeightFactor, heightFactor);
+    // locTextureHeight = glGetUniformLocation(idProgramShader,"heightTexture");
+    // glUniform1i(locTextureHeight, heightTexture);
+    // locCameraPosition = glGetUniformLocation(idProgramShader,"cameraPos");
+    // glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
+    // locTextureWidth = glGetUniformLocation(idProgramShader,"widthTexture");
+    // glUniform1i(locTextureWidth, widthTexture);
+    // locLightPosition = glGetUniformLocation(idProgramShader, "lightPosition");
+    // glUniform3fv(locLightPosition, 1, glm::value_ptr(lightPosition));
+    // locTexture = glGetUniformLocation(idProgramShader, "rgbTexture");
+}
+GLuint vboVertex;
+GLuint vboNormal;
+GLuint vboIndex;
+void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> &indices, vector<Vertex> &vertices){
+  // Initialize the buffer objects
+  // TODO -> sadece calissin diye yapiyorum
+  vertices = vector<Vertex>(3*textureWidth*textureHeight);
+  for(int i = 0; i < textureHeight; i++){
+      for(int j = 0; j < textureWidth; j++){
+          vertices[3*(i*textureWidth+j)+0].vPosition = glm::vec3(i, j, 0);
+          vertices[3*(i*textureWidth+j)+1].vPosition = glm::vec3(i+1, j, 0);
+          vertices[3*(i*textureWidth+j)+2].vPosition = glm::vec3(i+1, j+1, 0);
+      }
+  }
 
-            // triangle1 in pixel
-            // left upperside, left lowerside,  right upperside
-            glm::vec3 indice1 = glm::vec3(i*textureWidth + j,(i+1)*textureWidth + j,i*textureWidth + j + 1);
-            //triangle2
-            //left lowerside, right lowerside, right upperside
-            glm::vec3 indice2 = glm::vec3((i+1)*textureWidth + j,(i+1)*textureWidth + j+1,i*textureWidth + j + 1);
-
-            indices[k].pos = indice1;
-            k++;
-            indices[k].pos = indice2;
-            k++;
+  GLfloat* vertexArray = new GLfloat[vertices.size() * 3];
+  for(int counter = 0; counter < vertices.size(); counter++){
+    vertexArray[counter*3+0] = vertices[counter].vPosition.x;
+    vertexArray[counter*3+1] = vertices[counter].vPosition.y;
+    vertexArray[counter*3+2] = vertices[counter].vPosition.z;
+    // cout << vertices[counter].vPosition.x << " " << vertices[counter].vPosition.y << " " << vertices[counter].vPosition.z  << endl;
+  }
 
 
-            // initialize vertices
-            // x,y,z
-            glm::vec3 vPosition = glm::vec3(j,0.0,i);
-            // u,v
-            glm::vec2 tPosition = glm::vec2(1 - ((float) j)/textureWidth , 1 - ((float) i)/textureHeight);
 
-            vertices[i*textureWidth + j].vPosition = vPosition;
-            vertices[i*textureWidth + j].tPosition = tPosition;
-        }
-    }
+  GLint* indexArray = new GLint[3*vertices.size()];
+  for(int counter = 0; counter < vertices.size(); counter++){
+    indexArray[counter*3+0] = counter*3+0;
+    indexArray[counter*3+1] = counter*3+1;
+    indexArray[counter*3+2] = counter*3+2;
+  }
+
+  // GLfloat* vertexArray = new GLfloat[6 * 3];
+  // vertexArray[0] = 500.;
+  // vertexArray[1] = 100.;
+  // vertexArray[2] = 0.;
+  //
+  // vertexArray[3] = 600.;
+  // vertexArray[4] = 100.;
+  // vertexArray[5] = 0.;
+  //
+  // vertexArray[6] = 500.;
+  // vertexArray[7] = 200.;
+  // vertexArray[8] = 0.;
+  //
+  // vertexArray[9] = 500.;
+  // vertexArray[10] = 000.;
+  // vertexArray[11] = 100.;
+  //
+  // vertexArray[12] = 600.;
+  // vertexArray[13] = 0.;
+  // vertexArray[14] = 100.;
+  //
+  // vertexArray[15] = 500.;
+  // vertexArray[16] = 0.;
+  // vertexArray[17] = 600.;
+
+  // GLfloat* normalArray = new GLfloat[6 * 3];
+  // normalArray[0] = 0.;
+  // normalArray[1] = 0.;
+  // normalArray[2] = 1.;
+  //
+  // normalArray[3] = 0.;
+  // normalArray[4] = 0.;
+  // normalArray[5] = 1.;
+  //
+  // normalArray[6] = 0.;
+  // normalArray[7] = 0.;
+  // normalArray[8] = 1.;
+  //
+  // normalArray[9]  = 0.;
+  // normalArray[10] = 0.;
+  // normalArray[11] = 1.;
+  //
+  // normalArray[12] = 0.;
+  // normalArray[13] = 0.;
+  // normalArray[14] = 1.;
+  //
+  // normalArray[15] = 0.;
+  // normalArray[16] = 0.;
+  // normalArray[17] = 1.;
+  //
+  // GLint* indexArray = new GLint[2 * 3];
+  // indexArray[0] = 0;
+  // indexArray[1] = 1;
+  // indexArray[2] = 2;
+  //
+  // indexArray[3] = 3;
+  // indexArray[4] = 4;
+  // indexArray[5] = 5;
+
+
+  // give data to gpu
+  glGenBuffers(1, &vboVertex);
+  glBindBuffer(GL_ARRAY_BUFFER, vboVertex);
+  // glBufferData(GL_ARRAY_BUFFER, vertices.size() * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertices.size() * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
+
+  // Bind VBO for drawing array data
+  glGenBuffers(1, &vboIndex);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndex);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertices.size() * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
+  // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
+
+
+  // Unbind any buffer object previously bound
+  // Bind with 0 to switch back to default pointer operation
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+  // Activate array-based data
+  glEnable(GL_DEPTH_TEST);
+  // glEnable(GL_LIGHTING);
+  glEnableClientState(GL_VERTEX_ARRAY);
+  glEnableClientState(GL_NORMAL_ARRAY);
+  glShadeModel(GL_SMOOTH);
+
 }
 void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Index> &indices, vector<Vertex> &vertices){
 
     // 1) Initialize the vertices/indices
-    initVerticesAndIndices(textureWidth, textureHeight, indices, vertices);
+    // initVerticesAndIndices(textureWidth, textureHeight, indices, vertices);
 
 
     // 2) Initialize the camera
@@ -223,25 +325,10 @@ void initialize(Camera &camera, int textureWidth, int textureHeight, vector<Inde
     // string fragmentShader = "src/shaders/shader.frag";
     // initShaders(idProgramShader, vertexShader , fragmentShader );
     // glUseProgram(idProgramShader);
+    // initializeUniforms(); TODO
 
     // 4) Initialize the GPU memory
-    // GLuint VAO;
-    // glGenVertexArrays(1, &VAO);
-    // glBindVertexArray(VAO);
-    //
-    // //Create vbo for vertices
-    // glGenBuffers(1, &idVertexBuffer);
-    // glBindBuffer(GL_ARRAY_BUFFER, idVertexBuffer);
-    // glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex)*vertices.size(), &vertices[0], GL_STATIC_DRAW);
-    // // Create vbo for indices
-    // glGenBuffers(1, &idIndexBuffer);
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idIndexBuffer);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Index)*indices.size(), &indices[0], GL_STATIC_DRAW);
-    //
-    // glVertexAttribPointer(0, 1, GL_V3F, GL_FALSE, sizeof(glm::vec3) + sizeof(glm::vec2),(void *) 0);
-    // glEnableVertexAttribArray(0);
-    // glVertexAttribPointer(0, 1, GL_V2F, GL_FALSE, sizeof(glm::vec3) + sizeof(glm::vec2), (void *) (3 * sizeof(glm::vec3)));
-    // glEnableVertexAttribArray(1);
+    initializeBuffers(textureHeight, textureWidth, indices, vertices);
 
 }
 void initializeOPENGL(int widthWindow, int heightWindow, int argc, char *argv[]){
@@ -299,99 +386,7 @@ void denemeUcgenler(){
   glVertex3f(500., 0., 600.);
   glEnd();
 }
-GLuint vboVertex;
-GLuint vboNormal;
-GLuint vboIndex;
-void initHW3(){
 
-    GLfloat* vertexArray = new GLfloat[6 * 3];
-    vertexArray[0] = 500.;
-    vertexArray[1] = 100.;
-    vertexArray[2] = 0.;
-
-    vertexArray[3] = 600.;
-    vertexArray[4] = 100.;
-    vertexArray[5] = 0.;
-
-    vertexArray[6] = 500.;
-    vertexArray[7] = 200.;
-    vertexArray[8] = 0.;
-
-    vertexArray[9] = 500.;
-    vertexArray[10] = 000.;
-    vertexArray[11] = 100.;
-
-    vertexArray[12] = 600.;
-    vertexArray[13] = 0.;
-    vertexArray[14] = 100.;
-
-    vertexArray[15] = 500.;
-    vertexArray[16] = 0.;
-    vertexArray[17] = 600.;
-
-    GLfloat* normalArray = new GLfloat[6 * 3];
-    normalArray[0] = 0.;
-    normalArray[1] = 0.;
-    normalArray[2] = 1.;
-
-    normalArray[3] = 0.;
-    normalArray[4] = 0.;
-    normalArray[5] = 1.;
-
-    normalArray[6] = 0.;
-    normalArray[7] = 0.;
-    normalArray[8] = 1.;
-
-    normalArray[9]  = 0.;
-    normalArray[10] = 0.;
-    normalArray[11] = 1.;
-
-    normalArray[12] = 0.;
-    normalArray[13] = 0.;
-    normalArray[14] = 1.;
-
-    normalArray[15] = 0.;
-    normalArray[16] = 0.;
-    normalArray[17] = 1.;
-
-    GLint* indexArray = new GLint[2 * 3];
-    indexArray[0] = 0;
-    indexArray[1] = 1;
-    indexArray[2] = 2;
-
-    indexArray[3] = 3;
-    indexArray[4] = 4;
-    indexArray[5] = 5;
-
-    // give data to gpu
-    glGenBuffers(1, &vboVertex);
-    glBindBuffer(GL_ARRAY_BUFFER, vboVertex);
-    glBufferData(GL_ARRAY_BUFFER, 6 * 3 * sizeof(GLfloat), vertexArray, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &vboNormal);
-    glBindBuffer(GL_ARRAY_BUFFER, vboNormal);
-    glBufferData(GL_ARRAY_BUFFER, 6 * 3 * sizeof(GLfloat), normalArray, GL_STATIC_DRAW);
-
-    glGenBuffers(1, &vboIndex);
-
-    // Bind VBO for drawing array data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndex);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * 3 * sizeof(GLuint), indexArray, GL_STATIC_DRAW);
-
-
-    // Unbind any buffer object previously bound
-    // Bind with 0 to switch back to default pointer operation
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // Activate array-based data
-    glEnable(GL_DEPTH_TEST);
-    // glEnable(GL_LIGHTING);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glShadeModel(GL_SMOOTH);
-
-}
 int main(int argc, char *argv[]) {
     vector<Index> indices;
     vector<Vertex> vertices;
@@ -406,7 +401,7 @@ int main(int argc, char *argv[]) {
 
     // Initialize the opengl framework
     initializeOPENGL(widthWindow, heightWindow, argc, argv);
-    initHW3();
+
 
     // From helper...
     initTexture(argv[1], argv[2], &textureWidth, &textureHeight);
@@ -461,12 +456,12 @@ int main(int argc, char *argv[]) {
       glEnableClientState(GL_NORMAL_ARRAY);
       glBindBuffer(GL_ARRAY_BUFFER, vboVertex);
       glVertexPointer(3, GL_FLOAT, 0, 0);
-      glBindBuffer(GL_ARRAY_BUFFER, vboNormal);
-      glNormalPointer(GL_FLOAT, 0, 0);
+      // glBindBuffer(GL_ARRAY_BUFFER, vboNormal);
+      // glNormalPointer(GL_FLOAT, 0, 0);
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboIndex);
 
       // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-      glDrawElements(GL_TRIANGLES, 2*3, GL_UNSIGNED_INT, 0);
+      glDrawElements(GL_TRIANGLES, 3*textureWidth*textureHeight*3, GL_UNSIGNED_INT, 0);
       // glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
