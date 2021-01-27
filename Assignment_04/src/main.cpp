@@ -197,10 +197,8 @@ static void keyCallback(GLFWwindow* window, int key, int scancode, int action, i
         }
     }else if(key == GLFW_KEY_T && (action == GLFW_PRESS || action == GLFW_REPEAT)){
       lightPosition.y += 5;
-      cout << lightPosition.y << endl;
     }else if(key == GLFW_KEY_G && (action == GLFW_PRESS || action == GLFW_REPEAT)){
       lightPosition.y -= 5;
-      cout << lightPosition.y << endl;
     }else if(key == GLFW_KEY_LEFT && (action == GLFW_PRESS || action == GLFW_REPEAT)){
       lightPosition.x -= 5;
     }else if(key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT)){
@@ -479,6 +477,10 @@ int main(int argc, char *argv[]) {
         glUniform1i(glGetUniformLocation(idProgramShader, "idJpegTexture"), 1);
         glActiveTexture(GL_TEXTURE0 + 0);
         glBindTexture(GL_TEXTURE_2D,idJpegTexture);
+
+        glUniform1f(locHeightFactor, heightFactor);
+        glUniform3fv(locLightPosition, 1, glm::value_ptr(lightPosition));
+
 
         glUseProgram(idProgramShader);
 
