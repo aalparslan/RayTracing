@@ -228,64 +228,6 @@ void initializeBuffers(int textureHeight, int textureWidth, const vector<Index> 
     indexArray[counter*3+2] = counter*3+2;
   }
 
-  // GLfloat* vertexArray = new GLfloat[6 * 3];
-  // vertexArray[0] = 500.;
-  // vertexArray[1] = 100.;
-  // vertexArray[2] = 0.;
-  //
-  // vertexArray[3] = 600.;
-  // vertexArray[4] = 100.;
-  // vertexArray[5] = 0.;
-  //
-  // vertexArray[6] = 500.;
-  // vertexArray[7] = 200.;
-  // vertexArray[8] = 0.;
-  //
-  // vertexArray[9] = 500.;
-  // vertexArray[10] = 000.;
-  // vertexArray[11] = 100.;
-  //
-  // vertexArray[12] = 600.;
-  // vertexArray[13] = 0.;
-  // vertexArray[14] = 100.;
-  //
-  // vertexArray[15] = 500.;
-  // vertexArray[16] = 0.;
-  // vertexArray[17] = 600.;
-
-  // GLfloat* normalArray = new GLfloat[6 * 3];
-  // normalArray[0] = 0.;
-  // normalArray[1] = 0.;
-  // normalArray[2] = 1.;
-  //
-  // normalArray[3] = 0.;
-  // normalArray[4] = 0.;
-  // normalArray[5] = 1.;
-  //
-  // normalArray[6] = 0.;
-  // normalArray[7] = 0.;
-  // normalArray[8] = 1.;
-  //
-  // normalArray[9]  = 0.;
-  // normalArray[10] = 0.;
-  // normalArray[11] = 1.;
-  //
-  // normalArray[12] = 0.;
-  // normalArray[13] = 0.;
-  // normalArray[14] = 1.;
-  //
-  // normalArray[15] = 0.;
-  // normalArray[16] = 0.;
-  // normalArray[17] = 1.;
-  //
-  // GLint* indexArray = new GLint[2 * 3];
-  // indexArray[0] = 0;
-  // indexArray[1] = 1;
-  // indexArray[2] = 2;
-  //
-  // indexArray[3] = 3;
-  // indexArray[4] = 4;
-  // indexArray[5] = 5;
 
 
   // give data to gpu
