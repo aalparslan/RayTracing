@@ -14,7 +14,7 @@ uniform vec3 lightPosition;
 uniform float heightFactor;
 
 // Texture-related data
-uniform sampler2D rgbTexture;
+uniform sampler2D heightMapTexture;
 uniform int widthTexture;
 uniform int heightTexture;
 uniform int textureOffset;
@@ -31,53 +31,37 @@ varying vec3 ToCameraVector; // Vector from Vertex to Camera;
 //}
 
 float findHeight(in vec2 uv ){
-    return  heightFactor * texture2D(rgbTexture,uv).r;
+    return  heightFactor * texture2D(heightMapTexture,uv).r;
     
 }
 
 
-vec3 findNormal(in vec3 position, in float tOffset){
-    
-    float topTriangleHeight = findHeight(vec2(1.0 + tOffset - ((position.x)/widthTexture),1.0 - ((position.z -1.0)/ heightTexture)));
-    float leftTriangleHeight = findHeight( vec2(1.0 + tOffset - ((position.x -1.0)/  widthTexture), 1.0 - ((position.z)/ heightTexture)));
-    float rightTriangleHeight = findHeight(vec2( 1.0 + tOffset  - ((position.x +1.0)/widthTexture), 1.0 - ((position.z)/heightTexture)));
-    float bottomLeftTriangleHeight = findHeight(vec2(1.0 + tOffset - ((position.x -1.0)/widthTexture), 1.0 - ((position.z +1.0)/ heightTexture)));
-    float bottomTriangleHeight = findHeight(vec2(1.0 + tOffset - ((position.x )/ widthTexture), 1.0 - ((position.z +1.0)/ heightTexture)));
-    float topRightTriangleHeight = findHeight(vec2( 1.0 + tOffset - ((position.x +1.0)/widthTexture), 1.0 - ((position.z -1.0)/ heightTexture)));
+vec3 findNormal(in vec3 M, in float tOffset){
     
     
-    vec3 bottomLeftTrianglePosition = vec3(position.x-1, rightTriangleHeight, position.z+1);
-    vec3 leftTrianglePosition = vec3(position.x -1, leftTriangleHeight, position.z);
-    vec3 rightTrianglePosition = vec3(position.x +1, rightTriangleHeight, position.z);
-    vec3 topTrianglePosition = vec3(position.x, rightTriangleHeight, position.z-1);
-    vec3 bottomTrianglePosition = vec3(position.x, rightTriangleHeight, position.z+1);
-    vec3 topRightTrianglePosition = vec3(position.x +1, rightTriangleHeight, position.z-1);
+    vec3 a = vec3(M.x   , 0, M.z+1);
+    vec3 b = vec3(M.x+1 , 0, M.z+1);
+    vec3 c = vec3(M.x+1 , 0, M.z);
+    vec3 d = vec3(M.x   , 0, M.z-1);
+    vec3 e = vec3(M.x-1 , 0, M.z-1);
+    vec3 f = vec3(M.x-1 , 0, M.z);
     
+    a = vec3(a.x, findHeight(vec2(1.0+tOffset-a.x/widthTexture, 1.0-a.z/heightTexture)), a.z);
+    b = vec3(b.x, findHeight(vec2(1.0+tOffset-b.x/widthTexture, 1.0-b.z/heightTexture)), b.z);
+    c = vec3(c.x, findHeight(vec2(1.0+tOffset-c.x/widthTexture, 1.0-c.z/heightTexture)), c.z);
+    d = vec3(d.x, findHeight(vec2(1.0+tOffset-d.x/widthTexture, 1.0-d.z/heightTexture)), d.z);
+    e = vec3(e.x, findHeight(vec2(1.0+tOffset-e.x/widthTexture, 1.0-e.z/heightTexture)), e.z);
+    f = vec3(f.x, findHeight(vec2(1.0+tOffset-f.x/widthTexture, 1.0-f.z/heightTexture)), f.z);
     
-    vec3 toTopRightVector = topRightTrianglePosition - position;
-    vec3 toBottomVector = bottomTrianglePosition - position;
-    vec3 toBottomLeftVector = bottomLeftTrianglePosition - position;
-    vec3 toTopVector = topTrianglePosition - position;
-    vec3 toRightVector = rightTrianglePosition - position;
-    vec3 toLeftVector = leftTrianglePosition - position;
+    vec3 A = -normalize(cross(M - a, M - f));
+    vec3 B = -normalize(cross(M - b, M - a));
+    vec3 C = -normalize(cross(M - c, M - b));
+    vec3 D = -normalize(cross(M - d, M - c));
+    vec3 E = -normalize(cross(M - e, M - d));
+    vec3 F = -normalize(cross(M - f, M - e));
     
-    
-    vec3 NormalDueToTopRightAndTopVectors = normalize(cross(toTopRightVector,toTopVector));
-    vec3 NormalDueToBottomAndRightVectors = normalize(cross(toBottomVector, toRightVector ));
-    vec3 NormalDueToLeftAndBottomLeftVectors = normalize(cross(toLeftVector, toBottomLeftVector));
-    vec3 NormalDueToRightAndTopRightVectors = normalize(cross(toRightVector, toTopRightVector));
-    vec3 NormalDueToBottomLeftAndBottomVectors = normalize(cross(toBottomLeftVector, toBottomVector));
-    vec3 NormalDueToTopAndLeftVectors = normalize(cross(toTopVector, toLeftVector));
-    
-    
-    vec3 finalNormal = NormalDueToRightAndTopRightVectors
-    + NormalDueToTopRightAndTopVectors
-    + NormalDueToTopAndLeftVectors
-    + NormalDueToLeftAndBottomLeftVectors
-    + NormalDueToBottomLeftAndBottomVectors
-    + NormalDueToBottomAndRightVectors;
-    
-    return normalize(finalNormal) ;
+    // return vec3(0, 1, 0);
+    return normalize(A + B + C + D + E + F);
 }
 
 void main()
