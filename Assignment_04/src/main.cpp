@@ -240,7 +240,7 @@ void initializeUniforms( float &heightFactor){
     glUniform1i(locTexture, 1);
     locTextureOffset = glGetUniformLocation(idProgramShader, "textureOffset");
     glUniform1i(locTextureOffset, textureOffset);
-
+    
 }
 
 
@@ -258,9 +258,9 @@ void initializeOPENGL(int argc, char *argv[]){
     if (!glfwInit()) {
         exit(-1);
     }
-
+    
     glewExperimental = GL_TRUE;
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
     
     win = glfwCreateWindow(widthWindow, heightWindow, "CENG477 - HW4", NULL, NULL);
     
@@ -366,10 +366,7 @@ int main(int argc, char *argv[]) {
     
     // initialize uniforms
     initializeUniforms( heightFactor);
-    
-    // Set we want to resize the window!
-    glfwSetWindowAttrib(win, GLFW_RESIZABLE , GLFW_TRUE);
-    
+
     //glViewport(0, 0, widthWindow, heightWindow);
     glEnable(GL_DEPTH_TEST);
     while(!glfwWindowShouldClose(win)) {
@@ -377,10 +374,9 @@ int main(int argc, char *argv[]) {
         // Automatic window size
         int currentWindowWidth;
         int currentWindowHeight;
-        glfwGetWindowSize(win, &currentWindowWidth, &currentWindowHeight);
-        //cout << currentWindowWidth << endl;
-        //cout << currentWindowHeight << endl;
-        glViewport(0, 0, currentWindowHeight, currentWindowWidth);
+        glfwGetFramebufferSize(win, &currentWindowWidth, &currentWindowHeight);
+        
+        glViewport(0, 0, currentWindowWidth, currentWindowHeight);
         
         
         glBindBuffer(GL_ARRAY_BUFFER, normal_buffer);
