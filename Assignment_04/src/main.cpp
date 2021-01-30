@@ -230,7 +230,7 @@ void initializeUniforms( float &heightFactor){
     glUniform1f(locHeightFactor, heightFactor);
     locTextureHeight = glGetUniformLocation(idProgramShader,"heightTexture");
     glUniform1i(locTextureHeight, heightTexture);
-    locCameraPosition = glGetUniformLocation(idProgramShader,"cameraPos");
+    locCameraPosition = glGetUniformLocation(idProgramShader,"cameraPosition");
     glUniform3fv(locCameraPosition, 1, glm::value_ptr(camera.position));
     locTextureWidth = glGetUniformLocation(idProgramShader,"widthTexture");
     glUniform1i(locTextureWidth, widthTexture);
