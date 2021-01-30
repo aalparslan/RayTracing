@@ -4,7 +4,7 @@
 #include "glm/gtx/rotate_vector.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include <vector>
-#include "helper.h"
+#include "helper.hpp"
 
 using namespace std;
 
