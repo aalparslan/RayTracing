@@ -1,4 +1,4 @@
-#include "helper.hpp"
+#include "helper.h"
 
 void initShaders(GLuint &programID, std::string &vertFile, std::string &fragFile)
 {
@@ -214,11 +214,11 @@ void initTexture(char *height_map_file, char *texture_map_file, int *w, int *h)
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, idHeightTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, h_width, h_height, 0, GL_RGB, GL_UNSIGNED_BYTE, h_raw_image);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t_width, t_height, 0, GL_RGB, GL_UNSIGNED_BYTE, t_raw_image);
     glGenerateMipmap(GL_TEXTURE_2D);
     
-    *w = t_width;
-    *h = t_height;
+    
+    *w = h_width;
+    *h = h_height;
     
     /* wrap up decompression, destroy objects, free pointers and close open files */
     jpeg_finish_decompress(&h_cinfo);
